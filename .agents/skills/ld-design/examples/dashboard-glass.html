@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Tablero Soft Glass</title>
+	<!-- TABLERO DE REFERENCIA (estilo Soft Glass): lateral de navegación + contenido con indicadores y listas de acción.
+	     Estructura: div.ld-shell > aside.ld-lateral (nav.ld-nav) + main.ld-pagina (secciones ld-tarjeta).
+	     Solo clases y tokens de LD.css; sin librerías, sin style="..." y sin colores sueltos. -->
+	<link href="LD.css" rel="stylesheet" />
+</head>
+<body>
+	<div class="ld-shell">
+		<aside class="ld-lateral" aria-label="Navegación principal">
+			<nav class="ld-nav">
+				<a href="#" aria-current="page">Resumen</a>
+				<p class="ld-nav-titulo">Cartera</p>
+				<a href="#">Nube y software <span class="ld-insignia">14</span></a>
+				<a href="#">Logística <span class="ld-insignia">9</span></a>
+				<a href="#">Instalaciones <span class="ld-insignia">8</span></a>
+				<p class="ld-nav-titulo">Seguimiento</p>
+				<a href="#">Renovaciones <span class="ld-insignia">6</span></a>
+				<a href="#">Niveles de servicio <span class="ld-insignia">12</span></a>
+			</nav>
+		</aside>
+
+		<main class="ld-pagina">
+			<div>
+				<div class="Titulo">Buenos días, Nizam</div>
+				<div class="Subtitulo">4 asuntos requieren una decisión. Todo lo demás va al día.</div>
+			</div>
+
+			<section class="ld-tarjeta" aria-labelledby="h-kpi">
+				<h2 id="h-kpi">Indicadores</h2>
+				<div class="ld-kpis">
+					<div class="ld-kpi"><span>Dinero en juego</span><strong>56,9 K</strong></div>
+					<div class="ld-kpi"><span>Recuperado en 2026</span><strong>38,6 K</strong></div>
+					<div class="ld-kpi"><span>Obligaciones del mes</span><strong>14 de 23</strong></div>
+				</div>
+			</section>
+
+			<section class="ld-tarjeta" aria-labelledby="h-atencion">
+				<div class="ld-barra">
+					<h2 id="h-atencion">Requiere atención <span class="ld-insignia">4</span></h2>
+					<a class="Enlace ld-barra-fin" href="#">Ver las 7 alertas</a>
+				</div>
+				<div class="ld-item">
+					<div><strong>Aviso de renovación en 14 días</strong><small>Skerry Networks renueva por 12 meses salvo aviso antes del 18 de octubre.</small></div>
+					<span class="ld-insignia">18 oct</span>
+					<input type="button" class="Boton Secundario BotonSmall" value="Revisar renovación" />
+				</div>
+				<div class="ld-item">
+					<div><strong>Posible crédito de servicio</strong><small>La disponibilidad fue 99,2 % en septiembre; el contrato promete 99,9 %.</small></div>
+					<span class="ld-insignia">20 oct</span>
+					<input type="button" class="Boton Secundario BotonSmall" value="Revisar crédito" />
+				</div>
+				<div class="ld-item">
+					<div><strong>Factura excede el tope de precio</strong><small>Se facturaron 348 000; el contrato limita a 336 000.</small></div>
+					<span class="ld-insignia">12 000</span>
+					<input type="button" class="Boton BotonSmall" value="Marcar factura" />
+				</div>
+			</section>
+
+			<section class="ld-tarjeta" aria-labelledby="h-obl">
+				<h2 id="h-obl">Obligaciones de octubre</h2>
+				<p class="ld-ayuda">23 vencen este mes, por responsable.</p>
+				<progress value="14" max="23" aria-label="14 de 23 completadas"></progress>
+				<div class="ld-metricas"><span>Hechas: <strong>14</strong></span><span>Próximas: <strong>7</strong></span><span>Tarde: <strong>2</strong></span></div>
+				<div class="ld-alerta aviso" role="status">2 obligaciones están atrasadas: Legal y Operaciones.</div>
+			</section>
+		</main>
+	</div>
+</body>
+</html>

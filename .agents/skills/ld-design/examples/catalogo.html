@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Catálogo de componentes LD</title>
+	<!-- Pantalla de referencia: muestra cada componente de LD.css con el HTML real que usan los demos y General.js.
+	     Ábrela directamente en el navegador (no necesita Django). En un proyecto, el enlace es
+	     <link href="{% static 'static/styles/LD.css' %}?v={{Ver}}" rel="stylesheet" />. -->
+	<link href="LD.css" rel="stylesheet" />
+</head>
+<body>
+	<div class="Titulo">Portal de imágenes</div>
+	<div class="Subtitulo">Arrastra tus imágenes, revísalas y guárdalas en una carpeta</div>
+
+	<main class="ld-pagina">
+
+		<section class="ld-tarjeta" aria-labelledby="h-carga">
+			<h2 id="h-carga">1. Seleccionar imágenes</h2>
+			<div id="divZona" class="ld-dropzone" tabindex="0">
+				<strong>Suelta aquí las imágenes</strong>
+				<span>o elígelas desde tu equipo; no hay límite de tamaño ni de cantidad</span>
+				<input id="fupArchivos" type="file" multiple accept="image/*" aria-label="Elegir imágenes" />
+			</div>
+			<p class="ld-barra"><span class="ld-insignia">6 imágenes</span> <span>48,2 MB en total</span></p>
+			<div id="lstArchivos" class="ld-galeria" aria-live="polite">
+				<div class="MarcoImagen2"><img class="Imagen" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236f9bff'/%3E%3Cstop offset='1' stop-color='%23b58bff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='240' height='160' fill='url(%23a)'/%3E%3C/svg%3E" /><div>playa.jpg</div><input type="button" class="Boton Secundario BotonSmall" value="Quitar" /></div>
+				<div class="MarcoImagen2"><img class="Imagen" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160'%3E%3Crect width='240' height='160' fill='%2349c5a0'/%3E%3Ccircle cx='170' cy='55' r='28' fill='%23ffe08a'/%3E%3C/svg%3E" /><div>montaña (2).png</div><input type="button" class="Boton Secundario BotonSmall" value="Quitar" /></div>
+				<div class="MarcoImagen2"><img class="Imagen" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160'%3E%3Crect width='240' height='160' fill='%23f08a6c'/%3E%3C/svg%3E" /><div>atardecer-largo-nombre-de-archivo.webp</div><input type="button" class="Boton Secundario BotonSmall" value="Quitar" /></div>
+				<div class="MarcoImagen2Sel"><img class="Imagen" alt="" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160'%3E%3Crect width='240' height='160' fill='%236c8cf0'/%3E%3C/svg%3E" /><div>seleccionada.gif</div><input type="button" class="Boton Secundario BotonSmall" value="Quitar" /></div>
+			</div>
+		</section>
+
+		<section class="ld-tarjeta" aria-labelledby="h-guardar">
+			<h2 id="h-guardar">2. Guardar en una carpeta</h2>
+			<div class="Fila">
+				<div class="Ancho20"><label for="txtCarpeta">Nombre de la carpeta</label></div>
+				<div class="Ancho80"><input id="txtCarpeta" type="text" maxlength="60" class="R" placeholder="vacaciones_2026" /></div>
+			</div>
+			<div class="Fila">
+				<div class="Ancho20"><label for="cboTipo">Categoría</label></div>
+				<div class="Ancho80"><select id="cboTipo"><option>Seleccione</option><option>Personal</option><option>Trabajo</option></select></div>
+			</div>
+			<div class="ld-barra">
+				<input id="btnGrabar" type="button" class="Boton" value="Grabar" />
+				<input id="btnCancelar" type="button" class="Boton Secundario" value="Cancelar" />
+				<input id="btnBorrar" type="button" class="Boton Peligro" value="Vaciar tanda" />
+				<input id="btnPopup" type="button" class="Boton Secundario ld-barra-fin" value="Abrir ventana" onclick="document.getElementById('divPopupContainer').style.display='inline'" />
+			</div>
+			<p><progress id="progreso" max="109" value="47"></progress></p>
+			<p>Viaje: 47/109 · <span class="ld-cargando" aria-hidden="true"></span> guardando…</p>
+			<p id="spnValida" class="ld-alerta error" role="alert">Nombre de carpeta: 1 a 60 letras, dígitos, - o _</p>
+			<div class="ld-alerta ok" role="status">Se guardaron 6 imágenes en la carpeta vacaciones_2026.</div>
+			<div class="ld-alerta aviso" role="status">Una imagen quedó fuera de la tanda: no es un archivo de imagen válido.</div>
+		</section>
+
+		<section class="ld-tarjeta" aria-labelledby="h-lista">
+			<h2 id="h-lista">3. Carpetas guardadas (Gui.Grilla)</h2>
+			<div id="divCarpetas">
+				<p class="ld-metricas">Total de registros: <strong>5</strong></p>
+				<table>
+					<thead>
+						<tr class="FilaCabecera"><th>Carpeta</th><th class="Derecha">Imágenes</th><th>Fecha</th><th class="Centro"><span class="ld-ayuda">Acciones</span></th></tr>
+					</thead>
+					<tbody>
+						<tr class="FilaDatos"><td>vacaciones_2026</td><td class="Derecha">6</td><td>13/10/2026 12:20</td><td class="Centro"><img class="Icono NoImprimir Edit" src="Images/Icons/Editar.png" alt="Editar" /> <img class="Icono NoImprimir Elim" src="Images/Icons/Eliminar.png" alt="Eliminar" /></td></tr>
+						<tr class="FilaDatos"><td>perros</td><td class="Derecha">12</td><td>13/10/2026 12:19</td><td class="Centro"><img class="Icono NoImprimir Edit" src="Images/Icons/Editar.png" alt="Editar" /> <img class="Icono NoImprimir Elim" src="Images/Icons/Eliminar.png" alt="Eliminar" /></td></tr>
+						<tr class="FilaDatos"><td>grande</td><td class="Derecha">2</td><td>12/10/2026 23:21</td><td class="Centro"><img class="Icono NoImprimir Edit" src="Images/Icons/Editar.png" alt="Editar" /> <img class="Icono NoImprimir Elim" src="Images/Icons/Eliminar.png" alt="Eliminar" /></td></tr>
+						<tr class="FilaDatos"><td>fsShifu</td><td class="Derecha">9</td><td>12/10/2026 22:33</td><td class="Centro"><img class="Icono NoImprimir Edit" src="Images/Icons/Editar.png" alt="Editar" /> <img class="Icono NoImprimir Elim" src="Images/Icons/Eliminar.png" alt="Eliminar" /></td></tr>
+					</tbody>
+					<tfoot><tr><td colspan="4" class="Centro"><input type="button" class="Pagina" value="&lt;&lt;" /><input type="button" class="Pagina" value="&lt;" /><input type="button" class="PaginaSel" value="1" /><input type="button" class="Pagina" value="2" /><input type="button" class="Pagina" value="3" /><input type="button" class="Pagina" value="&gt;" /></td></tr></tfoot>
+				</table>
+			</div>
+		</section>
+
+		<section class="ld-tarjeta" aria-labelledby="h-estados">
+			<h2 id="h-estados">4. Estados</h2>
+			<div class="ld-alerta info" role="status">Información: puedes arrastrar más imágenes antes de guardar.</div>
+			<div class="ld-alerta error" role="alert">Error - La carpeta ya existe. Elige otro nombre.</div>
+			<div class="ld-vacio">Todavía no hay carpetas guardadas.</div>
+		</section>
+	</main>
+
+	<!-- Ventana emergente: Popup.Resize y Popup.ConfigurarArrastre fijan su posición y tamaño -->
+	<div id="divPopupContainer" class="PopupContainer">
+		<div id="divPopupWindow" class="PopupWindow" style="left:25%;top:20%;width:50%;height:55%">
+			<div id="divBarra" class="BarraTitulo">
+				<span>Detalles de la carpeta</span>
+				<input type="button" class="Boton Secundario BotonSmall" value="✕" aria-label="Cerrar" onclick="document.getElementById('divPopupContainer').style.display='none'" />
+			</div>
+			<div class="Cuerpo">
+				<div class="Fila"><div class="Ancho20">Carpeta</div><div class="Ancho80"><input type="text" value="vacaciones_2026" readonly /></div></div>
+				<div class="Fila"><div class="Ancho20">Imágenes</div><div class="Ancho80"><input type="text" value="6" readonly /></div></div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Solo para esta demostración: alterna el tema claro/oscuro con la tecla T.
+		document.addEventListener("keydown", function (e) {
+			if (e.key.toLowerCase() === "t") {
+				var r = document.documentElement;
+				r.dataset.tema = r.dataset.tema === "oscuro" ? "claro" : "oscuro";
+			}
+		});
+		if (location.hash === "#oscuro") document.documentElement.dataset.tema = "oscuro";
+		if (location.hash === "#popup") document.getElementById("divPopupContainer").style.display = "inline";
+	</script>
+</body>
+</html>

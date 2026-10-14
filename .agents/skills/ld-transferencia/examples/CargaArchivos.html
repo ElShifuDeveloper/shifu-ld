@@ -1,0 +1,50 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Portal de imágenes</title>
+	<!-- Pantalla de carga de imágenes por viajes (bloques I/P y lotes) con el tema LD.css. Los id coinciden con los
+	     que usan CargaArchivos.js y GaleriaLotes.js; no los cambies sin cambiar el JavaScript. -->
+	<link href="{% static 'static/styles/LD.css' %}?v={{Ver}}" rel="stylesheet" />
+</head>
+<body>
+	<div class="Titulo">Portal de imágenes</div>
+	<div class="Subtitulo">Arrastra tus imágenes, revísalas y guárdalas en una carpeta</div>
+
+	<main class="ld-pagina">
+		<section class="ld-tarjeta" aria-labelledby="hSeleccion">
+			<h2 id="hSeleccion">1. Selecciona las imágenes</h2>
+			<div id="divZona" class="ld-dropzone">
+				<strong>Suelta aquí las imágenes</strong>
+				<span>o elígelas desde tu equipo</span>
+				<input id="fupArchivos" type="file" multiple accept="image/*" aria-label="Elegir imágenes" />
+			</div>
+			<p class="ld-barra"><span class="ld-insignia"><span id="spnTotalArchivos">0</span> imágenes</span></p>
+			<div id="lstArchivos" class="ld-galeria" aria-live="polite"></div>
+		</section>
+
+		<section class="ld-tarjeta" aria-labelledby="hGuardar">
+			<h2 id="hGuardar">2. Guárdalas en una carpeta</h2>
+			<div class="Fila">
+				<div class="Ancho20"><label for="txtCarpeta">Nombre de la carpeta</label></div>
+				<div class="Ancho80"><input id="txtCarpeta" type="text" maxlength="60" class="R" placeholder="vacaciones_2026" autocomplete="off" /></div>
+			</div>
+			<div class="ld-barra">
+				<input id="btnGrabar" type="button" class="Boton" value="Grabar" />
+				<input id="btnCancelar" type="button" class="Boton Secundario" value="Cancelar" />
+			</div>
+			<progress id="progreso" value="0" aria-label="Avance de la carga"></progress>
+			<p id="spnValida" role="status" aria-live="polite"></p>
+		</section>
+	</main>
+
+	{% csrf_token %}
+	<!-- Tamaños del protocolo: salen de settings (LD_SIZE_LOTE y LD_SIZE_BLOQUE) vía la vista PantallaCarga; el JavaScript no los fija -->
+	<input id="hdfSizeLote" type="hidden" value="{{ SizeLote }}" />
+	<input id="hdfSizeBloque" type="hidden" value="{{ SizeBloque }}" />
+	<input id="hdfMaxArchivosLote" type="hidden" value="{{ MaxArchivosLote }}" />
+	<script src="{% static 'static/scripts/Paquetes.js' %}?v={{Ver}}"></script>
+	<script src="{% static 'appPortal/CargaArchivos.js' %}?v={{Ver}}"></script>
+</body>
+</html>

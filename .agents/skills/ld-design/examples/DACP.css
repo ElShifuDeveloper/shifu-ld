@@ -1,0 +1,321 @@
+﻿body {
+    background-color: lightblue;
+}
+.Titulo {
+    background-color: black;
+    color: white;
+    font-size: xx-large;
+}
+.Subtitulo {
+    background-color: white;
+    color: black;
+    font-size: x-large;
+}
+.Mensaje{
+    color:blue;
+    font-weight:bold;
+}
+.FilaCabecera{
+    background-color:blue;
+    color:white;
+}
+.FilaCabecera2 {
+    background-color: red;
+    color: white;
+}
+.FilaDatos {
+    background-color: white;
+    color: blue;
+}
+.Centro{
+    text-align:center;
+}
+.Derecha {
+    text-align: right;
+}
+.Pagina{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    text-align:center;
+    background-color:blue;
+    color:white;
+    cursor:pointer;
+}
+    .Pagina:hover {
+        background-color: white;
+        color: blue;
+    }
+.PaginaSel {
+    background-color: white;
+    color: blue;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    cursor: pointer;
+}
+.Orden{
+    color:white;
+    cursor:pointer;
+    text-decoration:underline;
+}
+.L{
+    background-color:gray;
+}
+/*Estilos para el Popup*/
+.PopupContainer {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: none;
+}
+
+.PopupWindow {
+    position: absolute;
+    left: 20%;
+    top: 20%;
+    width: 60%;
+    height: 60%;
+    background-color: white;
+    border-color: blue;
+    border-style: solid;
+    border-width: medium;
+}
+
+.PopupImagen {
+    position: absolute;
+    left: 35%;
+    top: 30%;
+    width: 30%;
+    height: 40%;
+    background-color: white;
+    border-color: blue;
+    border-style: solid;
+    border-width: medium;
+}
+
+.BarraTitulo {
+    height: 30px;
+    background-image: none,linear-gradient(to bottom,rgba(255,255,255,.15) 0,rgba(255,255,255,0) 100%);
+    background-color: blue;
+    border-color: #f85a00;
+    color: white;
+}
+
+.Icono {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.IconoMedio {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.Cuerpo {
+    margin:20px;
+    padding: 5px;
+}
+
+.Fila {
+    clear: left;
+    width: 100%;
+    padding: 10px;
+}
+
+.Ancho20 {
+    float: left;
+    width: 20%;
+}
+
+.Ancho80 {
+    float: left;
+    width: 80%;
+}
+
+.Imagen {
+    text-align:center;
+    width: 120px;
+    height: 100px;
+}
+
+.ImagenGrande {
+    text-align:center;
+    width: 450px;
+    height: 300px;
+}
+
+.Marco {
+	float:left;
+    margin: 0 auto;
+    width: 300px;
+    height: 300px;
+    padding: 20px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 10%;
+}
+
+.MarcoImagen1 {
+    float: left;
+    width: 200px;
+    height: 140px;
+    padding: 20px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 10%;
+}
+
+.MarcoImagen2 {
+    float: left;
+    width: 200px;
+    height: 200px;
+    padding: 20px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 10%;
+}
+
+.MarcoImagen3 {
+    float: left;
+    width: 160px;
+    height: 160px;
+    padding: 20px;
+    border-style: solid;
+    border-color: blue;
+    border-radius: 10%;
+}
+
+.MarcoImagen2Sel {
+    float: left;
+    width: 200px;
+    height: 200px;
+    padding: 20px;
+    border-style: solid;
+    border-color: red;
+    border-radius: 10%;
+	background-color: yellow;
+}
+
+    .MarcoImagen1:hover, .MarcoImagen2:hover, .MarcoImagen3:hover {
+        border-style: solid;
+        border-color: red;
+        background-color: yellow;
+        cursor: pointer;
+    }
+
+.Enlace {
+    color: blue;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.CabExpandir, .Expandible {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: red;
+    color: white;
+    text-align: center;
+    vertical-align: central;
+    line-height: 30px;
+    cursor: pointer;
+    float: left;
+}
+
+.Boton {
+    background: #5268ff;
+    border: 1px solid #5268ff;
+    border-radius: 1.25em;
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system,\.SFNSText-Regular,San Francisco,Roboto,Segoe UI,Helvetica Neue,Lucida Grande,sans-serif;
+    font-size: 1em;
+    font-weight: 500;
+    height: 2.5em;
+    left: 50%;
+    outline: 0;
+    transition: border-color .2s cubic-bezier(.77,0,.175,1),background-color .2s cubic-bezier(.77,0,.175,1),color .2s cubic-bezier(.77,0,.175,1);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 9.75em;
+}
+
+.BotonActivo {
+    background: #fff;
+    border: 1px solid #5268ff;
+    border-radius: 1.25em;
+    box-sizing: border-box;
+    color: #5268ff;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system,\.SFNSText-Regular,San Francisco,Roboto,Segoe UI,Helvetica Neue,Lucida Grande,sans-serif;
+    font-size: 1em;
+    font-weight: 500;
+    height: 2.5em;
+    left: 50%;
+    outline: 0;
+    transition: border-color .2s cubic-bezier(.77,0,.175,1),background-color .2s cubic-bezier(.77,0,.175,1),color .2s cubic-bezier(.77,0,.175,1);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 9.75em;
+}
+
+.BotonGrid {
+    background: #5268ff;
+    border: 1px solid #5268ff;
+    border-radius: 1.25em;
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system,\.SFNSText-Regular,San Francisco,Roboto,Segoe UI,Helvetica Neue,Lucida Grande,sans-serif;
+    font-size: 1em;
+    font-weight: 500;
+    height: 2.5em;
+    left: 50%;
+    outline: 0;
+    transition: border-color .2s cubic-bezier(.77,0,.175,1),background-color .2s cubic-bezier(.77,0,.175,1),color .2s cubic-bezier(.77,0,.175,1);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 6em;
+}
+
+.Negrita{
+    font-weight:bold;
+}
+
+.BotonSmall {
+    background: #5268ff;
+    border: 1px solid #5268ff;
+    border-radius: 1.25em;
+    box-sizing: border-box;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    font-family: -apple-system,\.SFNSText-Regular,San Francisco,Roboto,Segoe UI,Helvetica Neue,Lucida Grande,sans-serif;
+    font-size: 1em;
+    font-weight: 500;
+    height: 2.5em;
+    left: 50%;
+    outline: 0;
+    transition: border-color .2s cubic-bezier(.77,0,.175,1),background-color .2s cubic-bezier(.77,0,.175,1),color .2s cubic-bezier(.77,0,.175,1);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    width: 2em;
+}

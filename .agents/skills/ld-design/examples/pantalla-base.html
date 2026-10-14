@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Portal de imágenes</title>
+	<!-- PLANTILLA DE PANTALLA LD: copia este archivo y cambia solo el contenido de las tarjetas.
+	     Estructura obligatoria: Titulo > Subtitulo > main.ld-pagina > section.ld-tarjeta (una por tarea).
+	     Nada de style="..." ni de Marco/Fila sueltos en <body>. En un proyecto Django el enlace es
+	     <link href="{% static 'styles/LD.css' %}" rel="stylesheet" /> -->
+	<link href="LD.css" rel="stylesheet" />
+</head>
+<body>
+	<div class="Titulo">Portal de imágenes</div>
+	<div class="Subtitulo">Adjunta imágenes, revisa sus vistas previas y guárdalas en una carpeta</div>
+
+	<main class="ld-pagina">
+
+		<!-- 1. Entrada: zona de arrastre con selector, ayuda y contador -->
+		<section class="ld-tarjeta" aria-labelledby="h-imagenes">
+			<h2 id="h-imagenes">Imágenes</h2>
+			<div id="divZona" class="ld-dropzone">
+				<strong>Arrastra aquí tus imágenes</strong>
+				<label for="fupArchivos">o selecciónalas con el explorador</label>
+				<input id="fupArchivos" type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" />
+				<span class="ld-ayuda">Formatos aceptados: JPEG, PNG, GIF y WebP</span>
+			</div>
+			<div class="ld-metricas">
+				<span>Imágenes en la tanda: <strong id="spnTotalArchivos">0</strong></span>
+				<span>Tamaño: <strong id="spnTamanoTotal">0 MB</strong></span>
+			</div>
+			<div id="divAvisos" class="ld-alerta aviso" role="status" aria-live="polite"></div>
+			<div id="lstArchivos" class="ld-galeria"></div>
+		</section>
+
+		<!-- 2. Destino y acciones: una sola acción primaria -->
+		<section class="ld-tarjeta" aria-labelledby="h-destino">
+			<h2 id="h-destino">Guardar</h2>
+			<div class="Fila">
+				<div class="Ancho20"><label for="txtCarpeta">Nombre de la carpeta</label></div>
+				<div class="Ancho80"><input id="txtCarpeta" type="text" maxlength="60" placeholder="vacaciones_2026" aria-describedby="spnValida" /></div>
+			</div>
+			<div class="ld-barra">
+				<input id="btnGrabar" type="button" class="Boton" value="Grabar" disabled />
+				<input id="btnCancelar" type="button" class="Boton Secundario" value="Cancelar" disabled />
+				<a class="Enlace ld-barra-fin" href="/consulta">Consultar carpetas guardadas</a>
+			</div>
+			<div id="divProgreso" hidden>
+				<progress id="progreso" value="0" max="1" aria-describedby="spnViaje"></progress>
+				<span id="spnViaje" class="ld-ayuda" role="status" aria-live="polite"></span>
+			</div>
+			<div id="spnValida" class="ld-alerta error" role="alert"></div>
+		</section>
+
+		<!-- 3. Resultado: oculto hasta tener algo que decir -->
+		<section id="divResumen" class="ld-tarjeta" aria-labelledby="spnResumenTitulo" hidden>
+			<h2 id="spnResumenTitulo">Se guardaron 1 imágenes en la carpeta galeria</h2>
+			<div id="lstResumen"></div>
+		</section>
+	</main>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Mantenimiento de productos</title>
+	<!-- Pantalla de mantenimiento con popup (adaptada de appDemo11) con el tema LD.css.
+	     Requiere Static/styles/LD.css, Static/scripts/General.js y Static/Images/Icons (los instala el kit base). -->
+	<link href="{% static 'static/styles/LD.css' %}?v={{Ver}}" rel="stylesheet" />
+</head>
+<body>
+	<div class="Titulo">Mantenimiento de Productos</div>
+	<div class="Subtitulo">Lista de productos</div>
+
+	<main class="ld-pagina">
+		<section class="ld-tarjeta">
+			<div id="divProducto"></div>
+		</section>
+	</main>
+
+	<!-- Gui.Grilla arma las rutas de sus iconos con hdfRaiz.value: sin este campo falla. -->
+	<input type="hidden" id="hdfRaiz" value="/static/static/" />
+
+	<div id="divPopupContainer" class="PopupContainer">
+		<div id="divPopupWindow" class="PopupWindow">
+			<div id="divBarra" class="BarraTitulo">
+				<span id="spnBarraTitulo">Detalles del producto</span>
+				<input id="btnCerrar" type="button" class="Boton Secundario BotonSmall" value="✕" aria-label="Cerrar ventana" title="Cerrar ventana" />
+			</div>
+			<div id="divPopup" class="Cuerpo">
+				<!-- El orden de los controles M es el orden de los campos que espera el SP:
+				     codigo|nombre|proveedor|categoria|precio|stock (6 campos).
+				     Clase M: entra en Obtener/Mostrar/LimpiarControles. R: requerido. L: solo lectura.
+				     E: entero en línea. D: decimal en línea. -->
+				<div class="Fila">
+					<div class="Ancho20"><label for="txtCodigo">Código</label></div>
+					<div class="Ancho80"><input id="txtCodigo" type="text" readonly="readonly" class="M L" /></div>
+				</div>
+				<div class="Fila">
+					<div class="Ancho20"><label for="txtNombre">Nombre</label></div>
+					<div class="Ancho80"><input id="txtNombre" type="text" maxlength="60" class="M R" /></div>
+				</div>
+				<div class="Fila">
+					<div class="Ancho20"><label for="cboProveedor">Proveedor</label></div>
+					<div class="Ancho80"><select id="cboProveedor" class="M R"></select></div>
+				</div>
+				<div class="Fila">
+					<div class="Ancho20"><label for="cboCategoria">Categoría</label></div>
+					<div class="Ancho80"><select id="cboCategoria" class="M R"></select></div>
+				</div>
+				<div class="Fila">
+					<div class="Ancho20"><label for="txtPrecio">Precio</label></div>
+					<div class="Ancho80"><input id="txtPrecio" type="text" maxlength="5" class="M R D" inputmode="decimal" /></div>
+				</div>
+				<div class="Fila">
+					<div class="Ancho20"><label for="txtStock">Stock</label></div>
+					<div class="Ancho80"><input id="txtStock" type="text" maxlength="5" class="M R E" inputmode="numeric" /></div>
+				</div>
+				<div class="ld-barra">
+					<input id="btnGrabar" type="button" class="Boton" value="Grabar" title="Grabar producto" />
+					<input id="btnCancelar" type="button" class="Boton Secundario" value="Cancelar" title="Cancelar" />
+				</div>
+				<p id="spnValida" class="ld-alerta error" role="alert"></p>
+			</div>
+		</div>
+	</div>
+
+	{% csrf_token %}
+	<script src="{% static 'static/scripts/General.js' %}?v={{Ver}}"></script>
+	<script src="{% static 'appDemo11/Mantenimiento.js' %}?v={{Ver}}"></script>
+</body>
+</html>

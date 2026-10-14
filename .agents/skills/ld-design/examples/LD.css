@@ -1,0 +1,375 @@
+/* LD.css — tema moderno de los proyectos LD: «Soft Glass» (vidrio suave) solo con CSS, sin librerías.
+ *
+ * Reemplaza a DACP.css conservando sus nombres de clase (Titulo, Subtitulo, Fila, Ancho20/80, Boton*, FilaCabecera,
+ * FilaDatos, Pagina*, Popup*, Marco*, Icono*…): las pantallas de los demos y los componentes de General.js
+ * (Gui.Grilla, Popup, Validacion) se ven modernos sin cambiar su JavaScript ni su HTML.
+ * Las clases nuevas llevan el prefijo ld- (ld-pagina, ld-tarjeta, ld-galeria, ld-dropzone, ld-alerta…).
+ *
+ * Cómo se usa: <link href="{% static 'static/styles/LD.css' %}" rel="stylesheet" /> en lugar de DACP.css.
+ * Tema: automático (claro u oscuro del sistema); fuerza uno con <html data-tema="claro"> o data-tema="oscuro".
+ * Reglas: colores, espacios y radios salen de las variables --ld-*; no pongas colores ni px sueltos en las pantallas.
+ */
+
+/* ---------- Tokens ---------- */
+:root {
+  color-scheme: light dark;
+  --ld-fuente: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --ld-fondo: #eef1fa;
+  --ld-fondo-degradado:
+    radial-gradient(52rem 34rem at 8% -8%, #dbe5ff 0%, transparent 62%),
+    radial-gradient(46rem 34rem at 100% 0%, #eadcff 0%, transparent 58%),
+    radial-gradient(60rem 40rem at 50% 120%, #d9ecff 0%, transparent 60%),
+    linear-gradient(180deg, #f3f5fc, #e9edf8);
+  --ld-vidrio: rgb(255 255 255 / .58);          /* tarjetas translúcidas (Soft Glass) */
+  --ld-vidrio-fuerte: rgb(255 255 255 / .82);   /* ventanas y barras: más opacas para leer mejor */
+  --ld-vidrio-borde: rgb(255 255 255 / .85);
+  --ld-vidrio-brillo: inset 0 1px 0 rgb(255 255 255 / .9);
+  --ld-desenfoque: blur(18px) saturate(1.35);
+  --ld-superficie: #ffffff;
+  --ld-superficie-2: #f0f2f5;
+  --ld-borde: #d5dbea;
+  --ld-texto: #18202c;
+  --ld-texto-suave: #566173;
+
+  --ld-primario: #27338f;
+  --ld-primario-hover: #1c2672;
+  --ld-primario-suave: #e6eafc;
+  --ld-sobre-primario: #ffffff;
+
+  --ld-ok: #0d7a49;
+  --ld-ok-suave: #e1f5eb;
+  --ld-peligro: #c1241b;
+  --ld-peligro-suave: #fdebea;
+  --ld-aviso: #8a5700;
+  --ld-aviso-suave: #fff2d3;
+
+  --ld-radio: 20px;
+  --ld-radio-sm: 12px;
+  --ld-sombra: 0 1px 2px rgb(40 50 110 / .06), 0 12px 32px rgb(40 50 110 / .10);
+  --ld-sombra-fuerte: 0 12px 40px rgb(16 24 40 / .22);
+  --ld-foco: 0 0 0 3px color-mix(in srgb, var(--ld-primario) 35%, transparent);
+
+  --ld-e1: .25rem;
+  --ld-e2: .5rem;
+  --ld-e3: .75rem;
+  --ld-e4: 1rem;
+  --ld-e5: 1.5rem;
+  --ld-e6: 2rem;
+  --ld-ancho: 1120px;
+  --ld-margen: clamp(1rem, 4vw, 2rem);   /* margen lateral de la página: nunca menos de 16 px entre el contenido y el borde */
+  --ld-icono-fondo: transparent;   /* los iconos PNG de Images/Icons son oscuros: en tema oscuro llevan una base clara */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --ld-fondo: #0c1020;
+    --ld-fondo-degradado:
+      radial-gradient(50rem 34rem at 8% -8%, #1d2a5c 0%, transparent 62%),
+      radial-gradient(46rem 34rem at 100% 0%, #36215f 0%, transparent 58%),
+      linear-gradient(180deg, #0d1224, #0a0d1a);
+    --ld-vidrio: rgb(255 255 255 / .06);
+    --ld-vidrio-fuerte: rgb(24 30 52 / .88);
+    --ld-vidrio-borde: rgb(255 255 255 / .13);
+    --ld-vidrio-brillo: inset 0 1px 0 rgb(255 255 255 / .10);
+    --ld-superficie: #171e33;
+    --ld-superficie-2: #1f2840;
+    --ld-borde: #2d3856;
+    --ld-texto: #e8ecf3;
+    --ld-texto-suave: #9aa6b8;
+    --ld-primario: #7ba3ff;
+    --ld-primario-hover: #9dbaff;
+    --ld-primario-suave: #1d2b4a;
+    --ld-sobre-primario: #0b1220;
+    --ld-ok: #4cc58d;
+    --ld-ok-suave: #12301f;
+    --ld-peligro: #ff8179;
+    --ld-peligro-suave: #3a1715;
+    --ld-aviso: #f2c25c;
+    --ld-aviso-suave: #36290c;
+    --ld-sombra: 0 1px 2px rgb(0 0 0 / .4), 0 6px 18px rgb(0 0 0 / .35);
+    --ld-icono-fondo: #e8ecf3;
+  }
+}
+:root[data-tema="oscuro"] {
+  --ld-fondo: #0c1020; --ld-superficie: #171e33; --ld-superficie-2: #1f2840; --ld-borde: #2d3856;
+  --ld-fondo-degradado: radial-gradient(50rem 34rem at 8% -8%, #1d2a5c 0%, transparent 62%), radial-gradient(46rem 34rem at 100% 0%, #36215f 0%, transparent 58%), linear-gradient(180deg, #0d1224, #0a0d1a);
+  --ld-vidrio: rgb(255 255 255 / .06); --ld-vidrio-fuerte: rgb(24 30 52 / .88); --ld-vidrio-borde: rgb(255 255 255 / .13); --ld-vidrio-brillo: inset 0 1px 0 rgb(255 255 255 / .10);
+  --ld-texto: #e8ecf3; --ld-texto-suave: #9aa6b8; --ld-primario: #7ba3ff; --ld-primario-hover: #9dbaff;
+  --ld-primario-suave: #1d2b4a; --ld-sobre-primario: #0b1220; --ld-ok: #4cc58d; --ld-ok-suave: #12301f;
+  --ld-peligro: #ff8179; --ld-peligro-suave: #3a1715; --ld-aviso: #f2c25c; --ld-aviso-suave: #36290c; --ld-icono-fondo: #e8ecf3;
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font: 400 1rem/1.55 var(--ld-fuente);
+  color: var(--ld-texto);
+  background: var(--ld-fondo);
+  background-image: var(--ld-fondo-degradado);
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding-bottom: var(--ld-e6);
+}
+img { max-width: 100%; }
+a, .Enlace { color: var(--ld-primario); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+a:hover, .Enlace:hover { color: var(--ld-primario-hover); }
+:focus-visible { outline: none; box-shadow: var(--ld-foco); border-radius: var(--ld-radio-sm); }
+.Negrita { font-weight: 600; }
+.Centro { text-align: center; }
+.Derecha { text-align: right; }
+.NoImprimir { }
+@media print { .NoImprimir, .BotonGrid, .Pagina, .PaginaSel { display: none !important; } body { background: #fff; color: #000; } }
+
+/* ---------- Contenedor de página ----------
+ * Todo lo que cuelga directamente de <body> (Titulo, Subtitulo, ld-pagina, y también Marco, Fila, etc. si alguien se
+ * salta la estructura) comparte el MISMO ancho máximo y márgenes laterales, así nada queda pegado al borde ni desalineado.
+ * Para un elemento a todo el ancho (barra superior, banda), añade la clase ld-ancho-total. */
+body > :where(:not(script, style, link, template, noscript, input[type="hidden"], .PopupContainer, .ld-ancho-total, [hidden])) {
+  width: min(calc(100% - 2 * var(--ld-margen)), var(--ld-ancho));
+  margin-inline: auto;
+  margin-block-start: var(--ld-e4);
+}
+.Titulo, .Subtitulo, .ld-pagina { width: min(calc(100% - 2 * var(--ld-margen)), var(--ld-ancho)); margin-inline: auto; }
+
+/* ---------- Encabezado de pantalla ---------- */
+.Titulo {
+  margin-block: var(--ld-e6) var(--ld-e1);
+  padding: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  background: none;
+  color: var(--ld-texto);
+}
+.Subtitulo {
+  margin-block: 0 var(--ld-e5);
+  padding: 0;
+  font-size: 1.05rem;
+  font-weight: 400;
+  background: none;
+  color: var(--ld-texto-suave);
+}
+.Mensaje { color: var(--ld-primario); font-weight: 600; }
+.ld-ayuda { color: var(--ld-texto-suave); font-size: .875rem; }   /* texto de apoyo discreto (formatos aceptados, límites, pistas) */
+.ld-metricas { display: flex; flex-wrap: wrap; gap: var(--ld-e1) var(--ld-e5); color: var(--ld-texto-suave); font-size: .95rem; }
+.ld-metricas strong { color: var(--ld-texto); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Barra superior opcional: marca y navegación (a todo el ancho; su contenido interior sí queda contenido) */
+.ld-encabezado { background: var(--ld-vidrio-fuerte); -webkit-backdrop-filter: var(--ld-desenfoque); backdrop-filter: var(--ld-desenfoque); border-bottom: 1px solid var(--ld-vidrio-borde); }
+.ld-encabezado > .ld-barra { width: min(calc(100% - 2 * var(--ld-margen)), var(--ld-ancho)); margin-inline: auto; padding-block: var(--ld-e3); }
+.ld-marca { font-weight: 700; letter-spacing: -.01em; color: var(--ld-texto); }
+
+/* Contenedor de página y tarjetas */
+.ld-pagina { padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ld-e4); }
+.ld-pagina > * { min-width: 0; }   /* un hijo de rejilla no se encoge por debajo de su contenido salvo que se pida */
+.ld-tarjeta, .Marco {
+  background: var(--ld-vidrio);
+  -webkit-backdrop-filter: var(--ld-desenfoque);
+  backdrop-filter: var(--ld-desenfoque);
+  border: 1px solid var(--ld-vidrio-borde);
+  border-radius: var(--ld-radio);
+  box-shadow: var(--ld-vidrio-brillo), var(--ld-sombra);
+  padding: var(--ld-e5);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ld-tarjeta, .Marco, .ld-lateral, .ld-encabezado { background: var(--ld-superficie); }   /* sin desenfoque, superficie opaca: nunca texto ilegible */
+}
+/* Panel interior blanco dentro de una tarjeta de vidrio (listas de elementos, como en la referencia) */
+.ld-panel { background: var(--ld-superficie); border: 1px solid var(--ld-borde); border-radius: var(--ld-radio-sm); padding: var(--ld-e3) var(--ld-e4); }
+.ld-tarjeta { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ld-e3); align-content: start; }
+.ld-tarjeta > * { margin: 0; min-width: 0; }
+.ld-tarjeta > h2, .ld-tarjeta-titulo { font-size: 1.05rem; font-weight: 600; }
+.ld-barra { display: flex; flex-wrap: wrap; gap: var(--ld-e2); align-items: center; }
+.ld-barra-fin { margin-left: auto; }
+.ld-barra > :is(h1, h2, h3, p) { margin: 0; }
+
+/* ---------- Formularios (clases de los demos: Fila, Ancho20, Ancho80) ---------- */
+.Fila { clear: none; padding: var(--ld-e2) 0; }
+.Fila:has(> .Ancho20) { display: grid; grid-template-columns: minmax(7.5rem, 22%) minmax(0, 1fr); gap: var(--ld-e2) var(--ld-e4); align-items: center; }
+.Fila:has(> .Boton, > .BotonSmall, > input[type="button"], > button, > a.Boton) { display: flex; flex-wrap: wrap; gap: var(--ld-e2); align-items: center; }   /* grupo de acciones: separadas y alineadas */
+.Ancho20, .Ancho80 { float: none; width: auto; min-width: 0; }
+.Ancho20 { color: var(--ld-texto-suave); font-weight: 500; }
+@media (max-width: 640px) { .Fila:has(> .Ancho20) { grid-template-columns: 1fr; gap: var(--ld-e1); } }
+
+input[type="text"], input[type="password"], input[type="number"], input[type="email"], input[type="search"], input[type="date"],
+select, textarea {
+  font: inherit;
+  color: var(--ld-texto);
+  background: var(--ld-superficie);
+  border: 1px solid var(--ld-borde);
+  border-radius: var(--ld-radio-sm);
+  padding: .55rem .75rem;
+  min-height: 2.5rem;
+  max-width: 100%;
+}
+input::placeholder, textarea::placeholder { color: var(--ld-texto-suave); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--ld-primario); }
+input[readonly], input[disabled], select[disabled] { background: var(--ld-superficie-2); color: var(--ld-texto-suave); }
+input[type="file"] { font: inherit; color: var(--ld-texto-suave); max-width: 100%; }
+.Fila input, .Fila select, .Fila textarea { max-width: 100%; }
+input[type="file"]::file-selector-button {
+  font: inherit; font-weight: 500; cursor: pointer; margin-right: var(--ld-e3);
+  padding: .5rem .9rem; border: 1px solid var(--ld-borde); border-radius: var(--ld-radio-sm);
+  background: var(--ld-superficie-2); color: var(--ld-texto);
+}
+input[type="file"]::file-selector-button:hover { background: var(--ld-primario-suave); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--ld-primario); width: 1.1rem; height: 1.1rem; }
+label { font-weight: 500; }
+.Ancho80 > input[type="text"], .Ancho80 > input[type="password"], .Ancho80 > select, .Ancho80 > textarea { width: min(100%, 26rem); }
+[hidden] { display: none !important; }
+
+/* ---------- Botones ---------- */
+.Boton, .BotonGrid, .BotonSmall, .BotonActivo, :where(input[type="button"], input[type="submit"], button) {
+  font: inherit; font-weight: 600; cursor: pointer; user-select: none; display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--ld-e2); height: auto; min-height: 2.5rem; padding: .5rem 1.1rem; width: auto; left: auto;
+  color: var(--ld-sobre-primario); background: var(--ld-primario); border: 1px solid var(--ld-primario); border-radius: 999px;
+  box-shadow: 0 1px 2px rgb(20 30 90 / .18);
+  transition: background-color .15s ease, border-color .15s ease, transform .05s ease;
+}
+.Boton:hover, .BotonGrid:hover, .BotonSmall:hover, :where(input[type="button"], input[type="submit"], button):hover {
+  background: var(--ld-primario-hover); border-color: var(--ld-primario-hover);
+}
+.Boton:active, .BotonSmall:active, :where(input[type="button"], button):active { transform: translateY(1px); }
+.Boton:disabled, :where(input[type="button"], button):disabled { opacity: .5; cursor: not-allowed; }
+.BotonSmall { min-width: 2.5rem; padding: .35rem .6rem; min-height: 2.25rem; }
+.BotonGrid { min-height: 2rem; padding: .25rem .7rem; font-size: .9rem; }
+.BotonActivo, .Boton.Secundario, .ld-secundario {
+  color: var(--ld-primario); background: var(--ld-superficie); border-color: var(--ld-borde);
+}
+.BotonActivo:hover, .Boton.Secundario:hover, .ld-secundario:hover { background: var(--ld-primario-suave); border-color: var(--ld-primario); color: var(--ld-primario); }
+.Boton.Peligro, .ld-peligro { background: var(--ld-peligro); border-color: var(--ld-peligro); color: #fff; }
+a.Boton, a.BotonSmall, a.BotonGrid { text-decoration: none; color: var(--ld-sobre-primario); }
+a.Boton.Secundario { color: var(--ld-primario); }
+.Boton.Secundario:disabled, .Boton:disabled { background: var(--ld-superficie-2); border-color: var(--ld-borde); color: var(--ld-texto-suave); }
+.Boton.Peligro:hover, .ld-peligro:hover { filter: brightness(.92); background: var(--ld-peligro); border-color: var(--ld-peligro); }
+
+/* Iconos de imagen (Images/Icons/*.png de General.js) */
+.Icono, .IconoMedio {
+  width: 28px; height: 28px; max-width: none; cursor: pointer; padding: 3px; background: var(--ld-icono-fondo); border-radius: var(--ld-radio-sm); object-fit: contain;
+  vertical-align: middle; transition: background-color .15s ease, transform .1s ease;
+}
+.IconoMedio { width: 36px; height: 36px; }
+.Icono:hover, .IconoMedio:hover { background: var(--ld-primario-suave); transform: scale(1.06); }
+
+/* ---------- Tabla de Gui.Grilla ---------- */
+table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--ld-superficie); border: 1px solid var(--ld-borde); border-radius: var(--ld-radio); overflow: hidden; font-size: .95rem; }
+th, td { padding: .6rem .8rem; text-align: left; vertical-align: middle; }
+.FilaCabecera, .FilaCabecera th, .FilaCabecera2, .FilaCabecera2 th {
+  background: var(--ld-superficie-2); color: var(--ld-texto-suave); font-weight: 600; font-size: .8rem; letter-spacing: .03em; text-transform: uppercase;
+  border-bottom: 1px solid var(--ld-borde);
+}
+.FilaCabecera2, .FilaCabecera2 th { background: var(--ld-aviso-suave); color: var(--ld-aviso); }
+.FilaCabecera th input[type="text"], .FilaCabecera th select { width: 100% !important; min-height: 2rem; padding: .25rem .5rem; font-size: .85rem; text-transform: none; letter-spacing: 0; }
+.Orden { color: inherit; cursor: pointer; }
+.Orden:hover { color: var(--ld-primario); }
+.SimbOrden { color: var(--ld-primario); }
+.FilaDatos { background: var(--ld-superficie); color: var(--ld-texto); }
+.FilaDatos td { border-bottom: 1px solid var(--ld-borde); }
+tbody .FilaDatos:nth-child(even) { background: color-mix(in srgb, var(--ld-superficie-2) 55%, var(--ld-superficie)); }
+.FilaDatos:hover { background: var(--ld-primario-suave); }
+tbody tr:last-child td { border-bottom: 0; }
+.FilaDatos td:has(> .Icono), .FilaDatos td:has(> .BotonGrid) { white-space: nowrap; }
+td.Derecha, th.Derecha { text-align: right; font-variant-numeric: tabular-nums; }
+.Pagina, .PaginaSel {
+  width: auto; min-width: 2.25rem; height: 2.25rem; padding: 0 .6rem; margin: 0 2px; border-radius: var(--ld-radio-sm);
+  text-align: center; cursor: pointer; font: inherit; font-weight: 600; font-size: .9rem;
+  color: var(--ld-texto); background: var(--ld-superficie); border: 1px solid var(--ld-borde);
+}
+.Pagina:hover { background: var(--ld-primario-suave); color: var(--ld-primario); border-color: var(--ld-primario); }
+.PaginaSel { background: var(--ld-primario); color: var(--ld-sobre-primario); border-color: var(--ld-primario); }
+.L { }
+
+/* Tabla adaptable: con scroll horizontal contenido en pantallas estrechas */
+@media (max-width: 720px) { table { display: block; overflow-x: auto; white-space: nowrap; } }
+
+/* ---------- Ventanas emergentes (Popup.Resize y Popup.ConfigurarArrastre fijan left/top/width/height) ---------- */
+.PopupContainer { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: none; z-index: 1000; background: rgb(10 14 22 / .55); backdrop-filter: blur(2px); }
+.PopupWindow, .PopupImagen {
+  position: absolute; left: 20%; top: 20%; width: 60%; height: 60%; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--ld-vidrio-fuerte); -webkit-backdrop-filter: var(--ld-desenfoque); backdrop-filter: var(--ld-desenfoque); color: var(--ld-texto); border: 1px solid var(--ld-vidrio-borde); border-radius: var(--ld-radio); box-shadow: var(--ld-vidrio-brillo), var(--ld-sombra-fuerte);
+}
+.PopupImagen { left: 35%; top: 30%; width: 30%; height: 40%; }
+.BarraTitulo {
+  flex: 0 0 auto; height: auto; min-height: 3rem; padding: var(--ld-e2) var(--ld-e4); display: flex; align-items: center; justify-content: space-between; gap: var(--ld-e3);
+  background: var(--ld-superficie-2); color: var(--ld-texto); font-weight: 600; border: 0; border-bottom: 1px solid var(--ld-borde); cursor: grab;
+}
+.BarraTitulo .IconoMedio { float: none !important; position: static !important; margin: 0; }
+.Cuerpo { flex: 1 1 auto; margin: 0; padding: var(--ld-e4); overflow: auto; }
+@media (max-width: 720px) { .PopupWindow { left: 2% !important; top: 4% !important; width: 96% !important; height: 92% !important; } }
+
+/* ---------- Tarjetas e imágenes (galerías) ---------- */
+.Imagen, .ImagenGrande { display: block; width: 100%; height: auto; max-height: 11rem; object-fit: cover; border-radius: var(--ld-radio-sm); background: var(--ld-superficie-2); }
+.ImagenGrande { max-height: 22rem; }
+.MarcoImagen1, .MarcoImagen2, .MarcoImagen3, .MarcoImagen2Sel {
+  float: none; display: inline-flex; flex-direction: column; gap: var(--ld-e2); width: 12.5rem; height: auto; margin: 0 var(--ld-e2) var(--ld-e2) 0; padding: var(--ld-e2);
+  background: var(--ld-superficie); border: 1px solid var(--ld-borde); border-radius: var(--ld-radio); box-shadow: var(--ld-sombra);
+  font-size: .9rem; overflow-wrap: anywhere; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.MarcoImagen1:hover, .MarcoImagen2:hover, .MarcoImagen3:hover { border-color: var(--ld-primario); background: var(--ld-superficie); cursor: pointer; }
+.MarcoImagen1 > input[type="button"], .MarcoImagen2 > input[type="button"], .MarcoImagen3 > input[type="button"], .MarcoImagen2Sel > input[type="button"] { margin-top: auto; }
+.MarcoImagen2Sel { border-color: var(--ld-primario); box-shadow: 0 0 0 2px var(--ld-primario); background: var(--ld-primario-suave); }
+.ld-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--ld-e3); }
+.ld-galeria > .MarcoImagen1, .ld-galeria > .MarcoImagen2, .ld-galeria > .MarcoImagen3, .ld-galeria > .MarcoImagen2Sel { width: auto; margin: 0; }
+
+/* ---------- Zona de arrastre, progreso, estados ---------- */
+.ld-dropzone {
+  display: grid; place-items: center; gap: var(--ld-e2); text-align: center; padding: var(--ld-e6) var(--ld-e4);
+  border: 1.5px dashed color-mix(in srgb, var(--ld-primario) 35%, var(--ld-borde)); border-radius: var(--ld-radio); background: color-mix(in srgb, var(--ld-superficie) 55%, transparent); color: var(--ld-texto-suave);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.ld-dropzone:hover, .ld-dropzone.activo { border-color: var(--ld-primario); background: var(--ld-primario-suave); color: var(--ld-texto); }
+.ld-dropzone strong { color: var(--ld-texto); font-size: 1.05rem; }
+.ld-dropzone input[type="file"] { width: min(100%, 24rem); }
+
+progress { width: 100%; height: .75rem; appearance: none; -webkit-appearance: none; border: 0; border-radius: 999px; background: var(--ld-superficie-2); overflow: hidden; }
+progress::-webkit-progress-bar { background: var(--ld-superficie-2); border-radius: 999px; }
+progress::-webkit-progress-value { background: var(--ld-primario); border-radius: 999px; transition: width .2s ease; }
+progress::-moz-progress-bar { background: var(--ld-primario); border-radius: 999px; }
+
+.ld-alerta:empty { display: none; }
+.ld-alerta { padding: var(--ld-e3) var(--ld-e4); border-radius: var(--ld-radio-sm); border: 1px solid; font-size: .95rem; }
+.ld-alerta.info { background: var(--ld-primario-suave); border-color: var(--ld-primario); color: var(--ld-texto); }
+.ld-alerta.ok { background: var(--ld-ok-suave); border-color: var(--ld-ok); color: var(--ld-ok); }
+.ld-alerta.error { background: var(--ld-peligro-suave); border-color: var(--ld-peligro); color: var(--ld-peligro); }
+.ld-alerta.aviso { background: var(--ld-aviso-suave); border-color: var(--ld-aviso); color: var(--ld-aviso); }
+.ld-vacio { padding: var(--ld-e6); text-align: center; color: var(--ld-texto-suave); border: 1px dashed var(--ld-borde); border-radius: var(--ld-radio); }
+.ld-insignia { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--ld-primario-suave); color: var(--ld-primario); }
+.ld-cargando { display: inline-block; width: 1rem; height: 1rem; border: 2px solid var(--ld-borde); border-top-color: var(--ld-primario); border-radius: 50%; animation: ld-giro .8s linear infinite; vertical-align: -2px; }
+@keyframes ld-giro { to { transform: rotate(360deg); } }
+
+.CabExpandir, .Expandible { float: none; display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--ld-primario); color: var(--ld-sobre-primario); cursor: pointer; line-height: 1; }
+
+/* ---------- Tablero: lateral + contenido y tarjetas de indicador (como el tablero de referencia) ----------
+ * <div class="ld-shell"><aside class="ld-lateral"><nav class="ld-nav">...</nav></aside><main class="ld-pagina">...</main></div>
+ * En móvil el lateral pasa arriba. Dentro de ld-shell no se usa Titulo/Subtitulo a ancho de página: van dentro de main. */
+.ld-shell { width: min(calc(100% - 2 * var(--ld-margen)), calc(var(--ld-ancho) + 16rem)); margin-inline: auto; margin-block: var(--ld-e5);
+  display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: var(--ld-e4); align-items: start; }
+.ld-shell > .ld-pagina { width: auto; margin: 0; }
+.ld-shell .Titulo { width: auto; margin-block: 0 var(--ld-e1); }
+.ld-shell .Subtitulo { width: auto; margin-block: 0 var(--ld-e4); }
+.ld-lateral { position: sticky; top: var(--ld-e4); background: var(--ld-vidrio); -webkit-backdrop-filter: var(--ld-desenfoque); backdrop-filter: var(--ld-desenfoque);
+  border: 1px solid var(--ld-vidrio-borde); border-radius: var(--ld-radio); box-shadow: var(--ld-vidrio-brillo), var(--ld-sombra); padding: var(--ld-e3); }
+.ld-nav { display: grid; gap: var(--ld-e1); }
+.ld-nav a { display: flex; align-items: center; justify-content: space-between; gap: var(--ld-e2); min-height: 2.5rem; padding: .45rem .8rem; border-radius: var(--ld-radio-sm);
+  color: var(--ld-texto-suave); font-weight: 500; text-decoration: none; }
+.ld-nav a:hover { background: var(--ld-primario-suave); color: var(--ld-texto); }
+.ld-nav a[aria-current="page"] { background: var(--ld-superficie); color: var(--ld-texto); font-weight: 600; box-shadow: 0 1px 2px rgb(40 50 110 / .10); }
+.ld-nav-titulo { margin: var(--ld-e3) .8rem var(--ld-e1); font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ld-texto-suave); }
+@media (max-width: 860px) { .ld-shell { grid-template-columns: minmax(0, 1fr); } .ld-lateral { position: static; } }
+.ld-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--ld-e3); }
+.ld-kpi { display: grid; gap: var(--ld-e1); padding: var(--ld-e4); background: var(--ld-superficie); border: 1px solid var(--ld-borde); border-radius: var(--ld-radio-sm); }
+.ld-kpi > span { color: var(--ld-texto-suave); font-size: .85rem; }
+.ld-kpi > strong { font-size: 1.75rem; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+/* Elemento de lista con acción a la derecha (una fila de «requiere atención») */
+.ld-item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ld-e3); padding: var(--ld-e3) var(--ld-e4); background: var(--ld-superficie); border: 1px solid var(--ld-borde); border-radius: var(--ld-radio-sm); }
+.ld-item > :first-child { flex: 1 1 14rem; min-width: 0; }
+.ld-item small { display: block; color: var(--ld-texto-suave); }
+/* Fondo 3D opcional (Three.js local): lienzo fijo detrás del contenido; ver references/fondo-3d-opcional.md */
+.ld-fondo3d { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+
+/* ---------- Movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
