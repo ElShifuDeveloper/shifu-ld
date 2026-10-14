@@ -115,7 +115,17 @@ def validar_archivos():
                 except ValueError as e:
                     errores.append(f"JSON inválido en {p.relative_to(RAIZ)}: {e}")
             elif f.endswith(".js") and shutil.which("node"):
-                r = subprocess.run(["node", "--check", str(p)], capture_output=True, text=True)
+                texto = p.read_text(encoding="utf-8")
+                if re.search(r"^\s*(?:import\b|export\b)", texto, re.MULTILINE):
+                    r = subprocess.run(
+                        ["node", "--check", "--input-type=module"],
+                        input=texto,
+                        capture_output=True,
+                        text=True,
+                        encoding="utf-8",
+                    )
+                else:
+                    r = subprocess.run(["node", "--check", str(p)], capture_output=True, text=True)
                 if r.returncode:
                     errores.append(f"sintaxis JS en {p.relative_to(RAIZ)}: {r.stderr.strip()[:120]}")
     if not shutil.which("node"):
