@@ -141,19 +141,6 @@ class clienteSQL():
             Log.saveLog(obeLog, self.ArchivoLog)
         return rpta
 
-    def EjecutarComandoLista(self, sql):
-        rpta = None
-        try:            
-            con = db.connect(self.CadenaConexion)
-            cmd = con.cursor()
-            cursor = cmd.execute(sql)
-            rpta = cursor.fetchall()
-        except Exception as errorgeneral:
-            obeLog=beLog("modAccesoDatos", "clienteSQL")
-            obeLog.setLog("EjecutarComandoLista", str(errorgeneral))
-            Log.saveLog(obeLog, self.ArchivoLog)
-        return rpta
-    
     def EjecutarInsertMasivoLista(self, strTabla, strCampos, lista):
         rpta = None
         try:            

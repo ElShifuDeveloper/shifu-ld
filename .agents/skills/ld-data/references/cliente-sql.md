@@ -1,8 +1,9 @@
 # `clienteSQL`: el cliente de los demos y cómo elegir el método
 
 Fuente única del contrato de `clienteSQL`. El archivo es [base/modAccesoDatos.py](../examples/base/modAccesoDatos.py), copia fiel de
-`Modulos/modAccesoDatos.py` de los proyectos LD (usa `Modulos/modUtilidades.py`: `beLog`, `Log`). Se crea con
-`clienteSQL(archivoConfig, archivoLog)`; no tiene más parámetros.
+`Modulos/modAccesoDatos.py` de los proyectos LD (usa `Modulos/modUtilidades.py`: `beLog`, `Log`). **Única corrección sobre el original:**
+se eliminó una segunda definición duplicada de `EjecutarComandoLista` que el demo repetía (sin efecto funcional, pero defecto real).
+Se crea con `clienteSQL(archivoConfig, archivoLog)`; no tiene más parámetros.
 
 ## Configuración
 

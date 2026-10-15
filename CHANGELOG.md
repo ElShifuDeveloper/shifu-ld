@@ -4,6 +4,13 @@ Formato: `## [versión] - fecha`, con **Cambios** y **Migración** (acciones man
 Versionado semántico: MAJOR si cambia la forma de trabajar o se retira algo; MINOR si se añade capacidad compatible; PATCH si solo
 se corrige o se aclara. El script `scripts/iniciar_proyecto.py --version` muestra lo que cambió desde la versión instalada.
 
+## [2.10.1] - 2026-10-15
+
+- **Corrección en el cliente de datos.** Se eliminó una definición **duplicada** de `EjecutarComandoLista`
+  en `ld-data/examples/base/modAccesoDatos.py` (el cliente de los demos la repetía dos veces; sin efecto
+  funcional, porque la segunda sobreescribía a la primera, pero es un defecto real). `cliente-sql.md`
+  documenta ahora esa única corrección sobre el original.
+
 ## [2.10.0] - 2026-10-15
 
 - **PostgreSQL como base de datos soportada (y nuevo default).** Se añade el gemelo
