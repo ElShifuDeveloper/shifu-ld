@@ -10,6 +10,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import iniciar_proyecto as ip  # noqa: E402
 
+try:
+    import yaml
+    HAY_YAML = True
+except ImportError:
+    HAY_YAML = False
+
 BLOQUE = (ip.REFS / "agents-block.md").read_text(encoding="utf-8")
 PLANTILLA_VACIA = "# [PROJECT_NAME] Constitution\n\n### [PRINCIPLE_1_NAME]\n[PRINCIPLE_1_DESCRIPTION]\n"
 
@@ -182,6 +188,84 @@ class PruebasExtremoAExtremo(unittest.TestCase):
         self.assertFalse((self.proy / "Modulos").exists())
         self.assertFalse((self.proy / "Static").exists())
 
+    # ---- stack y modo de desarrollo (.ld/config.json)
+    def test_si_usa_ld_y_sdd_por_defecto(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        rc, salida = correr([str(self.proy), "--si", "--sin-sql"])
+        self.assertEqual(rc, 0)
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["stack"], "ld")
+        self.assertEqual(cfg["modo"], "sdd")
+        self.assertIn("Siguiente paso", salida)
+
+    def test_stack_actual_no_instala_kit_ni_diseno(self):
+        rc, salida = correr([str(self.proy), "--si", "--sin-speckit", "--stack", "actual"])
+        self.assertEqual(rc, 0)
+        self.assertFalse((self.proy / "Modulos").exists())
+        self.assertFalse((self.proy / "Static").exists())
+        self.assertFalse((self.proy / ip.RUTA_DISENO).exists())
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["stack"], "actual")
+        self.assertEqual(cfg["sql"], False)          # con stack no-LD no se impone SQL Server
+        self.assertIn("no se instala el kit base", salida)
+
+    def test_modo_vibe_guarda_config_y_sugiere_prompts(self):
+        rc, salida = correr([str(self.proy), "--si", "--sin-speckit", "--modo", "vibe"])
+        self.assertEqual(rc, 0)
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["modo"], "vibe")
+        self.assertIn("vibe coding", salida)
+        self.assertIn("Agrega un gráfico", salida)
+
+    def test_config_se_conserva_y_no_se_reescribe_en_update(self):
+        correr([str(self.proy), "--si", "--sin-speckit", "--stack", "actual", "--modo", "vibe"])
+        cfg_ruta = self.proy / ip.RUTA_CONFIG
+        antes = cfg_ruta.read_bytes()
+        rc, salida = correr([str(self.proy), "--si", "--sin-speckit", "--update"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(cfg_ruta.read_bytes(), antes)        # la elección sobrevive a --update
+        self.assertFalse((self.proy / "Modulos").exists())    # sigue sin kit: el stack es el mismo
+        self.assertNotIn("guardar", salida)
+
+    def test_stack_definir_requiere_detalle(self):
+        rc, err = correr_error([str(self.proy), "--si", "--sin-speckit", "--stack", "definir"])
+        self.assertEqual(rc, 2)
+        self.assertIn("stack-detalle", err)
+        self.assertFalse((self.proy / ip.RUTA_CONFIG).exists())
+        rc, _ = correr([str(self.proy), "--si", "--sin-speckit", "--stack", "definir", "--stack-detalle", "FastAPI + React"])
+        self.assertEqual(rc, 0)
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["stack"], "definir")
+        self.assertEqual(cfg["stack_detalle"], "FastAPI + React")
+
+    def test_comando_shifu_iniciar_se_instala(self):
+        correr([str(self.proy), "--si", "--sin-speckit"])
+        cmd = self.proy / ip.RUTA_COMANDO_INICIAR
+        self.assertTrue(cmd.is_file())
+        texto = cmd.read_text(encoding="utf-8")
+        self.assertIn("iniciar_proyecto.py", texto)
+        self.assertIn(str(ip.RAIZ), texto)                    # ruta del paquete resuelta
+        self.assertNotIn("{{RUTA_PAQUETE}}", texto)
+
+    def test_version_informa_modo_y_stack(self):
+        correr([str(self.proy), "--si", "--sin-speckit", "--stack", "definir",
+                "--stack-detalle", "FastAPI + React", "--modo", "vibe"])
+        rc, salida = correr([str(self.proy), "--version"])
+        self.assertEqual(rc, 0)
+        self.assertIn("modo de desarrollo: vibe", salida)
+        self.assertIn("FastAPI + React", salida)
+
+    def test_preguntar_opcion_acepta_numero_clave_o_defecto(self):
+        import unittest.mock as mock
+        opciones = [("a", "A"), ("b", "B")]
+        with mock.patch("builtins.input", return_value="2"):
+            self.assertEqual(ip.preguntar_opcion("X", opciones, "a", True), "b")
+        with mock.patch("builtins.input", return_value="B"):
+            self.assertEqual(ip.preguntar_opcion("X", opciones, "a", True), "b")
+        with mock.patch("builtins.input", return_value=""):
+            self.assertEqual(ip.preguntar_opcion("X", opciones, "a", True), "a")
+        self.assertEqual(ip.preguntar_opcion("X", opciones, "a", False), "a")
+
     def test_skill_obsoleto_se_avisa_y_se_aparta_con_update(self):
         self.preparar_speckit(PLANTILLA_VACIA)
         viejo = self.proy / ".agents" / "skills" / "ld-crud-legacy"
@@ -261,6 +345,144 @@ class PruebasExtremoAExtremo(unittest.TestCase):
     def test_diseno_en_simulacion_no_escribe(self):
         correr([str(self.proy), "--si", "--sin-speckit", "--dry-run", "--diseno", "ld"])
         self.assertFalse((self.proy / ip.RUTA_DISENO).exists())
+
+    # ---- limpieza de versiones *-old (--clean)
+    def preparar_old(self):
+        """Deja *-old como los dejaría un --update: skills, kit base y raíz."""
+        skills = self.proy / ".agents" / "skills"
+        (skills / "ld-speckit" / "SKILL-old.md").write_text("viejo", encoding="utf-8")
+        (skills / "ld-crud-legacy-old").mkdir()
+        (skills / "ld-crud-legacy-old" / "SKILL-old.md").write_text("viejo", encoding="utf-8")
+        (self.proy / "Static" / "scripts" / "General-old.js").write_text("// viejo", encoding="utf-8")
+        (self.proy / "AGENTS-old.md").write_text("viejo", encoding="utf-8")
+        return skills
+
+    def test_clean_simula_luego_borra_solo_los_old(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        skills = self.preparar_old()
+
+        rc, salida = correr([str(self.proy), "--clean", "--dry-run"])
+        self.assertEqual(rc, 0)
+        self.assertIn("por borrar", salida)
+        self.assertTrue((skills / "ld-speckit" / "SKILL-old.md").exists())
+
+        rc, salida = correr([str(self.proy), "--clean"])
+        self.assertEqual(rc, 0)
+        self.assertIn("borrados", salida)
+        self.assertFalse((skills / "ld-speckit" / "SKILL-old.md").exists())
+        self.assertFalse((skills / "ld-crud-legacy-old").exists())
+        self.assertFalse((self.proy / "Static" / "scripts" / "General-old.js").exists())
+        self.assertFalse((self.proy / "AGENTS-old.md").exists())
+        self.assertTrue((skills / "ld-speckit" / "SKILL.md").exists())          # lo real queda
+        self.assertTrue((self.proy / "Static" / "scripts" / "General.js").exists())
+
+    def test_clean_sin_old_lo_dice_y_no_toca_nada(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        rc, salida = correr([str(self.proy), "--clean"])
+        self.assertEqual(rc, 0)
+        self.assertIn("nada que limpiar", salida)
+
+    def test_entradas_old_no_repite_los_hijos_de_una_carpeta_old(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        skills = self.preparar_old()
+        entradas = [str(p.relative_to(self.proy)) for p in ip.entradas_old(self.proy)]
+        self.assertIn(".agents/skills/ld-crud-legacy-old", entradas)
+        self.assertNotIn(".agents/skills/ld-crud-legacy-old/SKILL-old.md", entradas)
+        self.assertTrue((skills / "ld-crud-legacy-old").exists())               # solo lista, no borra
+
+    def test_version_menciona_clean(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        self.preparar_old()
+        rc, salida = correr([str(self.proy), "--version"])
+        self.assertEqual(rc, 0)
+        self.assertIn("--clean las borra", salida)
+
+    # ---- ganchos de tiempos (.specify/extensions.yml) y comando /ld.tiempo
+    def test_instala_ganchos_y_comando_renderizados(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        rc, salida = correr([str(self.proy), "--si", "--sin-sql"])
+        self.assertEqual(rc, 0)
+        ext = (self.proy / ip.RUTA_EXTENSIONES).read_text(encoding="utf-8")
+        for fase in ("before_constitution", "after_specify", "before_clarify", "after_plan",
+                     "before_tasks", "after_checklist", "before_analyze", "after_implement",
+                     "before_converge", "after_converge"):
+            self.assertIn(f"  {fase}:", ext)
+        self.assertEqual(ext.count("- extension: ld-tiempos"), 18)
+        self.assertEqual(ext.count(ip.MARCA_TIEMPOS_INI), 18)
+        self.assertNotIn("condition:", ext)                 # un gancho con condition se salta
+        self.assertIn("optional: false", ext)
+        self.assertIn(f"{ip.RAIZ}/scripts/tiempos.py . inicio plan", ext)   # ruta del paquete resuelta
+        cmd = (self.proy / ip.RUTA_COMANDO_TIEMPOS).read_text(encoding="utf-8")
+        self.assertIn("tiempos.py . $ARGUMENTS", cmd)
+        self.assertIn(str(ip.RAIZ), cmd)
+        self.assertIn("ganchos de tiempos", salida)
+
+    def test_ganchos_conservan_los_del_usuario_y_no_duplican(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        ext = self.proy / ip.RUTA_EXTENSIONES
+        texto = ext.read_text(encoding="utf-8").replace(
+            "  before_plan:\n",
+            "  before_plan:\n    - extension: mio\n      command: mio.comando\n"
+            "      prompt: \"haz algo\"\n      optional: true\n", 1)
+        ext.write_text(texto, encoding="utf-8")
+        correr([str(self.proy), "--si", "--sin-sql", "--update"])
+        nuevo = ext.read_text(encoding="utf-8")
+        self.assertIn("mio.comando", nuevo)                        # se conserva lo del usuario
+        self.assertEqual(nuevo.count("- extension: ld-tiempos"), 18)   # sin duplicar
+        self.assertTrue((ext.parent / "extensions-old.yml").exists())  # respaldo del anterior
+        plantilla = ip.render_tiempos(ip.PLANTILLA_EXTENSIONES.read_text(encoding="utf-8"))
+        self.assertEqual(ip.fusionar_extensiones(nuevo, plantilla), nuevo)   # idempotente
+
+    def test_ganchos_sobre_archivo_del_usuario_sin_comentarios(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        (self.proy / ip.RUTA_EXTENSIONES).write_text("otra_clave: 1\n", encoding="utf-8")
+        correr([str(self.proy), "--si", "--sin-sql", "--update"])
+        nuevo = (self.proy / ip.RUTA_EXTENSIONES).read_text(encoding="utf-8")
+        self.assertIn("otra_clave: 1", nuevo)
+        self.assertIn("hooks:", nuevo)
+        self.assertEqual(nuevo.count("- extension: ld-tiempos"), 18)
+
+    def test_ganchos_limpian_restos_sin_marcas(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        ext = self.proy / ip.RUTA_EXTENSIONES
+        sin_marcas = "\n".join(l for l in ext.read_text(encoding="utf-8").splitlines()
+                               if l.strip() not in (ip.MARCA_TIEMPOS_INI, ip.MARCA_TIEMPOS_FIN)) + "\n"
+        ext.write_text(sin_marcas, encoding="utf-8")
+        correr([str(self.proy), "--si", "--sin-sql", "--update"])
+        nuevo = ext.read_text(encoding="utf-8")
+        self.assertEqual(nuevo.count("- extension: ld-tiempos"), 18)   # no se duplican los restos
+
+    def test_version_informa_el_estado_de_los_ganchos(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        rc, salida = correr([str(self.proy), "--version"])
+        self.assertIn("ganchos de tiempos: no instalados", salida)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        rc, salida = correr([str(self.proy), "--version"])
+        self.assertIn("ganchos de tiempos: al día", salida)
+        self.assertIn("comando /ld.tiempo: al día", salida)
+        (self.proy / ip.RUTA_EXTENSIONES).write_text("hooks:\n  before_plan:\n", encoding="utf-8")
+        rc, salida = correr([str(self.proy), "--version"])
+        self.assertIn("desactualizados", salida)
+
+    @unittest.skipUnless(HAY_YAML, "PyYAML no está instalado: se omite el parseo del YAML")
+    def test_ganchos_yaml_valido(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--sin-sql"])
+        datos = yaml.safe_load((self.proy / ip.RUTA_EXTENSIONES).read_text(encoding="utf-8"))
+        hooks = datos["hooks"]
+        self.assertEqual(len(hooks), 18)
+        for fase, entradas in hooks.items():
+            self.assertEqual(len(entradas), 1, fase)
+            self.assertEqual(entradas[0]["extension"], "ld-tiempos")
+            self.assertIs(entradas[0]["optional"], False)
+            self.assertNotIn("condition", entradas[0])
+            self.assertIn("tiempos.py . ", entradas[0]["prompt"])
 
 
 if __name__ == "__main__":

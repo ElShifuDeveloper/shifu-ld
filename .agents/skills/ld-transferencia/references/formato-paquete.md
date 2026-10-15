@@ -20,13 +20,27 @@
 | Demo | Aquí | Motivo |
 |---|---|---|
 | `nTexto = len(texto)` (caracteres) | longitud en **bytes** UTF-8 | El cliente lee `nTexto` bytes: con una tilde o una eñe el texto se corta o se desplaza. |
-| `byte1 = int(nTexto / 255)`, `byte2 = nTexto % 255` (base 255; appDemo10, 14) | base 256 | Base estándar; un par cliente-servidor nuevo debe usar el mismo criterio en ambos lados. |
+| `byte1 = int(nTexto / 255)`, `byte2 = nTexto % 255` (base 255; appDemo10, 14) | base 256 | Base estándar; un par cliente-servidor nuevo debe usar el mismo criterio en ambos lados. La base 255 es autoconsistente hasta `n = 65279`; por encima `byte1` llega a 256 y `bytes([...])` falla. |
 | appDemo06–08: un solo byte de cabecera (texto ≤ 255) | dos bytes | Un byte limita el texto a 255; con 2 caben ~65 000 bytes. |
 | Texto decodificado con `String.fromCharCode` | `TextDecoder("utf-8")` | `fromCharCode` no decodifica UTF-8. |
 | Sin validar tamaños | validación completa | Evita mostrar o guardar archivos incompletos. |
 
-**Compatibilidad:** los demos existentes (base 255 y longitud en caracteres) no leen estos paquetes ni al revés. Si
-modificas un demo para usar `Paquete`, cambia cliente y servidor a la vez; no mezcles formatos en una misma pantalla.
+## Interoperabilidad con un appDemo (legado)
+
+Los dos formatos **no son compatibles byte a byte**: un paquete de los demos (base 255, longitud en
+caracteres, texto leído con `String.fromCharCode`) no lo lee `Paquete.Leer`, ni al revés. Al integrar
+una pantalla o un endpoint heredado, la regla es:
+
+- **Opción A (recomendada): moderniza cliente y servidor a la vez.** Si tocas algo que hoy usa el
+  formato de los demos, cambia los dos extremos al formato de este kit (`Paquete.Crear`/`Leer`) en el
+  mismo cambio y **no mezcles formatos en una misma pantalla**. Los demos solo son correctos con texto
+  ASCII: con una tilde o una eñe ya cortan mal el texto y las imágenes, así que migrarlos al kit también
+  corrige ese defecto.
+- **Puente de migración (transitorio):** mientras un extremo siga en el formato de los demos, lee ese
+  paquete con `Paquete.LeerLegacy` (está en `modPaquetes.py` y en `Paquetes.js`) en lugar de reescribir
+  el demo. `LeerLegacy` reproduce el formato antiguo tal cual (base 255, longitud en caracteres, texto
+  Latin-1) y por eso hereda sus límites: solo es fiable con texto ASCII y hasta `n = 65279`. Úsalo como
+  paso de una migración hacia `Paquete.Crear`/`Paquete.Leer`, no como formato de trabajo.
 
 ## Agrupar por tamaño
 

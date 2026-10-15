@@ -4,6 +4,91 @@ Formato: `## [versión] - fecha`, con **Cambios** y **Migración** (acciones man
 Versionado semántico: MAJOR si cambia la forma de trabajar o se retira algo; MINOR si se añade capacidad compatible; PATCH si solo
 se corrige o se aclara. El script `scripts/iniciar_proyecto.py --version` muestra lo que cambió desde la versión instalada.
 
+## [2.9.0] - 2026-10-14
+
+- **Instalador distribuible (`npx`) y asistente de arranque.** El paquete se puede ejecutar directo
+  desde GitHub con Node: `npx github:ElShifuDeveloper/shifu-ld <proyecto>` (nuevos `package.json`,
+  `bin/shifu-ld.js` y `LICENSE` MIT). El instalador pregunta **stack** y **modo de desarrollo** y los
+  guarda en `.ld/config.json`:
+  - **Stack:** `ld` (Django + JS nativo + `General.js` + SPs; instala el kit base) · `actual`/`definir`
+    (respetar el stack del proyecto: solo copia los skills, no impone kit base ni estilo LD).
+  - **Modo:** `sdd` (Spec Kit, recomendado) · `vibe` (código guiado por chat; el instalador sugiere prompts).
+  Flags nuevos: `--stack`, `--stack-detalle`, `--modo`. `--si` conserva los valores por defecto (ld + sdd).
+- **Comando `/shifu.iniciar`** en `.opencode/commands/`: hace el asistente en conversación y ejecuta el
+  instalador no interactivo (útil dentro de OpenCode, donde el CLI no tiene terminal interactiva).
+- Los skills leen `.ld/config.json`: el coordinador y el bloque de `AGENTS.md` no proponen `/speckit.*`
+  en modo «vibe» y no imponen el kit base ni el estilo LD con un stack distinto de «ld».
+- Pruebas: `test_iniciar_proyecto.py` (+8 casos de stack/modo/`config.json` y del comando `/shifu.iniciar`).
+
+### Migración
+- No rompe instalaciones previas: sin `--stack`/`--modo` (o con `--si`) se usa `ld` + `sdd` como antes.
+  Los proyectos existentes pueden fijar su elección con `--stack`/`--modo` cuando quieran; `.ld/config.json`
+  se conserva entre `--update` (como `.ld/diseno.json`).
+
+## [2.8.1] - 2026-10-14
+
+- **Créditos de la metodología.** El `README.md` (sección «Créditos y origen») y el encabezado de
+  **todos** los `SKILL.md` reconocen que la metodología **LD** (cadenas delimitadas, bytes, bloques,
+  lotes y empaquetado) es de **Luis Dueñas Huaroto**, de quien proviene el nombre «LD». Cambio solo de
+  documentación: no altera el comportamiento de los skills.
+
+## [2.8.0] - 2026-10-14
+
+- **Cronometraje automático de las etapas del SDD.** `iniciar_proyecto.py` instala
+  `.specify/extensions.yml` con **18 ganchos** (9 etapas × `before`/`after`) que marcan `inicio` y
+  `fin` de cada comando `/speckit.*` sin que la persona ejecute nada, y el comando **`/ld.tiempo`** en
+  `.opencode/commands/` (destino de los ganchos y uso manual). La fusión **conserva los ganchos del
+  usuario**: solo se reemplazan los bloques entre las marcas `# LD:tiempos:ini|fin`. `--version` y
+  `--update` informan y refrescan el estado de los ganchos y del comando.
+- **Etapa `checklist`** (de `/speckit.checklist`) sumada a las nueve etapas medidas.
+- **Red de seguridad en `tiempos.py`:** `abiertas` (etapas con inicio y sin fin, con los minutos
+  transcurridos) y `estimar [--escribir]` (deduce el fin por la fecha del artefacto de cada etapa,
+  nunca toca filas ya marcadas, no estima las etapas sin archivo propio, **no crea intervalos
+  negativos** —si la marca previa es posterior al artefacto, deja la fila sin inicio y lo dice— y
+  anota las filas como «estimado por fechas de archivo»). `informe` avisa de las etapas abiertas, y
+  `ld-speckit` regla 8 pide revisarlas al responder «¿qué sigue?». Además, `fin` rechaza cerrar una
+  etapa **antes** de su `inicio` (sugiere `--reiniciar` para un ciclo nuevo).
+- Pruebas: `test_tiempos.py` (16 casos), `test_iniciar_proyecto.py` (35, con los ganchos: fusión,
+  idempotencia, respaldos, estado en `--version` y parseo YAML cuando hay PyYAML).
+
+### Migración
+- Tras `--update`, los ganchos quedan activos en el proyecto: **reinicia OpenCode** para que cargue el
+  comando `/ld.tiempo` y el bloque LD de `AGENTS.md` actualizado. Si tenías tu propio
+  `.specify/extensions.yml`, tus entradas se conservan (LD solo gestiona sus marcas).
+- `specs/METRICS.md` se crea con el primer `informe` o la primera marca:
+  `python <paquete>/scripts/tiempos.py . informe`.
+- Para medir lo que ya pasó sin marcas: `python <paquete>/scripts/tiempos.py . estimar --escribir`
+  (filas anotadas como estimadas) o `--ahora <ISO>` para anotar una fecha conocida.
+
+## [2.7.0] - 2026-10-14
+
+- **Tiempos del SDD en `specs/METRICS.md`.** Nuevo `scripts/tiempos.py` del paquete: `inicio` y `fin`
+  por etapa, e `informe` que rinde el archivo. Mide constitución, especificar, clarificar, plan,
+  tareas, analizar, implementar y converger, con el desglose de la implementación (desarrollo, QA,
+  seguridad, diseño, integración y otros). El estado vive en `.ld/tiempos.json` y `METRICS.md` se
+  reescribe desde ahí (no se edita a mano). `ld-speckit` documenta cuándo marcar cada etapa
+  (`references/tiempos.md`) y el bloque de `AGENTS.md` lo recuerda en todos los proyectos.
+- **Limpieza de versiones anteriores: `--clean` (alias `--limpiar`).** Borra los archivos y carpetas
+  `*-old` que dejan `--update` y las reinstalaciones: skills, kit base y raíz del proyecto
+  (`AGENTS-old.md`, `opencode-old.json`, `ld-crud-legacy-old`). Con `--dry-run` solo los lista.
+  `--version` recuerda cuántas hay y que `--clean` las borra.
+- **Color en todos los comandos.** `scripts/consola.py` centraliza el color ANSI de los scripts del
+  paquete (verde lo hecho, amarillo los avisos, rojo los errores, encabezados en negrita-cian). Se
+  apaga solo si la salida no es una terminal o con `NO_COLOR`/`TERM=dumb`; los informes que se
+  comparan en pruebas conservan el texto exacto. `ld-speckit/references/estilo-salida.md` fija el
+  estilo de las respuestas del agente (encabezados, negritas, tablas y semáforo ✅/⚠️/❌).
+- Pruebas: nuevas suites del paquete `test_tiempos.py` (11 casos) y `test_consola.py` (6), más 4
+  casos de `--clean` en `test_iniciar_proyecto.py`; `validar_paquete.py` las ejecuta con las demás.
+
+### Migración
+- No hay nada que cambiar en los proyectos: skills y kit base se llevan con `--update`. El script
+  `tiempos.py` se ejecuta desde el paquete (no se copia al proyecto) y crea `specs/METRICS.md` la
+  primera vez: `python <paquete>/scripts/tiempos.py . informe`.
+- Recomendado tras actualizar: `--clean --dry-run` para ver las copias `*-old` y `--clean` para
+  borrarlas cuando ya no las necesites.
+- Para empezar a medir, marca el inicio y el fin de la próxima etapa; no hay que reconstruir las
+  etapas ya corridas (si las quieres, `--ahora <ISO>` permite anotar una fecha pasada).
+
 ## [2.6.0] - 2026-10-13
 
 - **`ld-transferencia`: máximo de archivos por lote configurable desde una sola fuente.** Nuevo `settings.LD_MAX_ARCHIVOS_LOTE`

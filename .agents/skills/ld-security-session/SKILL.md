@@ -5,6 +5,8 @@ description: "Implementa y revisa login, sesión, captcha, cierre de sesión y a
 
 # LD_security_session
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Seguridad de acceso del estilo base LD: sesión de Django con la clave `request.session["Usuario"]`, login con captcha y clave cifrada en el navegador, y decoradores de `Modulos/modSeguridadWeb.py`. Basado en `appDemo14` de `webpython`.
 
 Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md). Para pantallas CRUD usa [ld-crud](../ld-crud/SKILL.md); para SPs y `clienteSQL`, [ld-data](../ld-data/SKILL.md).

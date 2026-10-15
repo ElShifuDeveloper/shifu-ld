@@ -5,6 +5,8 @@ description: "Diseña e implementa el servidor Django/Python del estilo LD: vist
 
 # LD_backend
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Implementa el servidor como autoridad del contrato y de la validación. Antes de modificar puntos de acceso HTTP, inspecciona rutas, vistas, módulos de datos, configuración, almacenamiento y pruebas, y conserva el contrato de los clientes existentes o planifica una migración coordinada con el frontend. Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md).
 
 ## Estilo base LD

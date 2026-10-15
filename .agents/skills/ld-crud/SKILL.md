@@ -5,6 +5,8 @@ description: "Crea o mantiene pantallas de consulta y mantenimiento (CRUD con po
 
 # LD_crud
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Convención base de las aplicaciones LD para una pantalla de consulta o de mantenimiento: **es el estilo de los proyectos LD**, no un estilo antiguo que haya que modernizar. Es el patrón de `appDemo03`–`appDemo14` de `webpython`: se aplica también en proyectos nuevos, y la consistencia con las demás pantallas pesa más que cualquier alternativa. Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md).
 
 ## Cuándo aplicarlo

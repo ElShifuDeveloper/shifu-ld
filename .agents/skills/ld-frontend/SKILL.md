@@ -5,6 +5,8 @@ description: "Implementa el frontend JavaScript nativo del estilo LD: pantallas 
 
 # LD_frontend
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Implementa en el navegador el estilo de los appDemo: JavaScript nativo, variables globales y funciones `async` que usan `fetch`, texto delimitado en lugar de JSON, y los componentes de `General.js`. Primero localiza el punto de acceso HTTP y confirma el contrato real con el backend; no inventes formatos ni cambies separadores sin actualizar el servidor. [ld-design](../ld-design/SKILL.md) cubre la apariencia. Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md).
 
 ## Estilo base LD

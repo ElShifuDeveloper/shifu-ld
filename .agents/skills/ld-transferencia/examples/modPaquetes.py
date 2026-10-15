@@ -12,6 +12,9 @@ Diferencias con los demos (a propósito):
     con tildes o eñes porque el cliente lee esa cantidad de bytes.
   * Los 2 bytes se leen en base 256 (n = b1*256 + b2, máximo 65535). Los demos usan base 255
     (appDemo10/14); un par cliente-servidor nuevo debe usar el mismo criterio en ambos lados.
+
+Para leer un paquete del formato antiguo de un demo durante una migración está `Paquete.LeerLegacy`
+(base 255, longitud en caracteres, texto Latin-1); no lo uses como formato de trabajo.
 """
 import os
 import re
@@ -45,6 +48,38 @@ class Paquete():
         if len(datos) < 2 + n:
             raise ValueError("Paquete truncado: falta parte del texto")
         texto = datos[2:2 + n].decode("utf-8")
+        registros = [r.split(sepCampo) for r in texto.split(sepReg)] if texto != "" else []
+        posicion = 2 + n
+        listaBytes = []
+        for campos in registros:
+            try:
+                size = int(campos[-1])
+            except ValueError:
+                raise ValueError("Tamaño no numérico en el registro: %s" % sepCampo.join(campos)) from None
+            if size < 0 or posicion + size > len(datos):
+                raise ValueError("Paquete truncado: faltan bytes de %s" % campos[0])
+            listaBytes.append(datos[posicion:posicion + size])
+            posicion += size
+        if posicion != len(datos):
+            raise ValueError("Paquete con bytes sobrantes")
+        return registros, listaBytes
+
+    @staticmethod
+    def LeerLegacy(datos, sepReg=SEP_REG, sepCampo=SEP_CAMPO):
+        """Lee un paquete del formato ANTERIOR de los demos (appDemo06-10, 14); inverso de Leer.
+
+        Existe solo como puente para leer un paquete que genera un demo existente durante una migración;
+        el formato de trabajo es `Leer`. Los demos usan base 255 en la cabecera, cuentan el texto en
+        caracteres (`len(texto)`, no bytes) y leen cada byte con `String.fromCharCode` (Latin-1, no UTF-8):
+        son correctos solo con texto ASCII. Reproduce ese comportamiento tal cual, así que hereda sus
+        límites (texto ASCII y `n <= 65279`). Devuelve (registros, listaBytes), igual que `Leer`.
+        """
+        if len(datos) < 2:
+            raise ValueError("Paquete sin cabecera")
+        n = datos[0] * 255 + datos[1]
+        if len(datos) < 2 + n:
+            raise ValueError("Paquete truncado: falta parte del texto")
+        texto = datos[2:2 + n].decode("latin-1")
         registros = [r.split(sepCampo) for r in texto.split(sepReg)] if texto != "" else []
         posicion = 2 + n
         listaBytes = []

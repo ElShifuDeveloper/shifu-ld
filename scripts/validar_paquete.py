@@ -15,6 +15,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True   # el paquete se distribuye sin __pycache__
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import consola                      # color de consola (se apaga solo sin terminal)
+except ImportError:                      # script copiado fuera del paquete: se sigue sin color
+    consola = None
+
 RAIZ = Path(__file__).resolve().parent.parent
 SKILLS = Path(sys.argv[1]) if len(sys.argv) > 1 else RAIZ / ".agents" / "skills"
 NOMBRE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -157,8 +164,9 @@ if __name__ == "__main__":
     validar_archivos()
     ejecutar_pruebas()
     for a in avisos:
-        print("AVISO:", a)
+        print(consola.decorar("AVISO: " + a) if consola else f"AVISO: {a}")
     for e in errores:
-        print("ERROR:", e)
-    print("RESULTADO:", "FALLA" if errores else "OK")
+        print(consola.decorar("ERROR: " + e) if consola else f"ERROR: {e}")
+    print(consola.decorar("RESULTADO: " + ("FALLA" if errores else "OK")) if consola
+          else "RESULTADO: " + ("FALLA" if errores else "OK"))
     sys.exit(1 if errores else 0)

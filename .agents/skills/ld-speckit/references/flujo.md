@@ -18,6 +18,11 @@ etapa. Cada etapa la revisa una persona antes de pasar a la siguiente: no encade
 Cuando la persona pregunte "¿qué sigue?", inspecciona esos archivos, responde con el comando y
 sugiere el texto de entrada. No ejecutes la etapa por tu cuenta salvo que lo pida.
 
+Cada etapa se **cronometra**: marca su inicio al empezar y su fin al terminar con
+`python <paquete>/scripts/tiempos.py . inicio|fin <etapa>`; los minutos quedan en `specs/METRICS.md`
+([tiempos.md](./tiempos.md)). Y responde con el estilo LD ([estilo-salida.md](./estilo-salida.md)):
+estructura, semáforo y el siguiente paso al final.
+
 ## Qué espera LD en cada etapa
 
 - **`/speckit.constitution`:** parte de [constitution.template.md](./constitution.template.md) y
@@ -43,7 +48,17 @@ sugiere el texto de entrada. No ejecutes la etapa por tu cuenta salvo que lo pid
 - **`/speckit.implement`:** en cada tarea, carga `ld-project-coordinator` y el skill indicado antes
   de editar; usa `spec.md`, `plan.md`, `contracts/` y `tasks.md` como contrato y, si la realidad
   los contradice, detente y propón actualizarlos. Cada tarea termina con su prueba ejecutada y
-  anotada.
+  anotada. La etapa se mide entera y además por sub-etapas (`implementar:desarrollo`, `:qa`,
+  `:seguridad`, `:diseño`, `:integracion`, `:otros`), que se abren y cierran cuando ocurren
+  ([tiempos.md](./tiempos.md)); el recorrido de integración de cada historia es tarea propia.
+
+## Tiempos y cierre del ciclo
+
+- **`/speckit.analyze`**: además de lo anterior, revisa que `specs/METRICS.md` tenga las marcas de
+  las etapas ya corridas (sin huecos ni etapas inventadas).
+- **`/speckit.converge`**: cierra también la etapa `converger` en METRICS.md y deja el informe al día.
+- Al terminar una feature, `specs/METRICS.md` y el registro de `quickstart.md` son la evidencia de
+  lo que costó y de lo que se probó: ambos se versionan con el proyecto.
 
 ## Comprobación
 

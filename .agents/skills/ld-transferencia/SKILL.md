@@ -5,6 +5,8 @@ description: "Implementa transferencias de archivos y de datos al estilo LD de l
 
 # LD_transferencia
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Cómo mueven archivos y volúmenes de datos los proyectos LD: **cadenas delimitadas y bytes**, en **viajes** secuenciales de tamaño acotado, con progreso. Es el estilo de `appDemo13` (bloques), `appDemo10` (lotes y paquetes de bytes), `appDemo26` y `appDemo28` (registros por viajes). No uses JSON, `multipart` por archivo completo ni un protocolo nuevo para esto: copia el patrón del demo (el código está en `examples/` con sus nombres originales). Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md).
 
 En navegador, `File`/`Blob` solo representan archivos que la persona seleccionó o soltó; la página no puede explorar rutas arbitrarias del disco local. El backend opera sobre su propio repositorio, configurado por el proyecto. La transferencia agrupa bytes en paquetes o bloques; no implica crear un ZIP.
@@ -27,14 +29,14 @@ Detalle de cada técnica: [tecnicas.md](./references/tecnicas.md). Formato exact
 
 ## Código base (copiar al proyecto, sin renombrar)
 
-- `examples/Paquetes.js` → `Static/scripts/Paquetes.js` (objeto `Paquete`: `Leer`, `Crear`, `PlanificarViajes` —sirve para subir y para bajar—, `AgruparPorTamano`, `CantidadBloques`, `ParametroEntero`). Su prueba es `test-paquetes.js`.
-- `examples/modPaquetes.py` → `Modulos/modPaquetes.py` (clases `Paquete` y `Archivos`). Su prueba es `test_modPaquetes.py`.
+- `examples/Paquetes.js` → `Static/scripts/Paquetes.js` (objeto `Paquete`: `Leer`, `Crear`, `PlanificarViajes` —sirve para subir y para bajar—, `AgruparPorTamano`, `CantidadBloques`, `ParametroEntero`; `LeerLegacy` solo como puente de migración desde el formato antiguo de los demos). Su prueba es `test-paquetes.js`.
+- `examples/modPaquetes.py` → `Modulos/modPaquetes.py` (clases `Paquete` y `Archivos`; `Paquete.LeerLegacy` igual que en JavaScript). Su prueba es `test_modPaquetes.py`.
 - Vistas: `views_transferencia.py` (incluye `PantallaConsulta` y `ObtenerBloque` para la descarga simétrica) y `views_registros.py`; pantalla: `CargaArchivos.html` (la de la galería lleva los mismos campos ocultos `hdfSizeLote`, `hdfSizeBloque` y `hdfMaxArchivosLote`); rutas: `urls_transferencia.py`.
 
 ## Reglas
 
 0. **«Streaming» en LD = metodología por chunks (bloques), en las DOS direcciones.** Cuando una especificación o una persona pida *streaming*, *transmisión*, *progreso* o *archivos grandes*, significa enviar y recibir por bloques secuenciales con progreso (el estilo `I`/`P`, los lotes y los viajes de registros), no una conexión abierta ni un protocolo nuevo. La regla de decisión es la misma al subir y al bajar: `size <= LD_SIZE_LOTE` viaja agrupado con otros en lotes (pocos viajes); mayor, se parte en bloques de `LD_SIZE_BLOQUE` (muchos viajes pequeños) que el receptor une. El formato del bloque puede ser **cadena delimitada** (registros) u **octet-stream** (bytes), según el dato; ambos son válidos. `StreamingHttpResponse`/`FileResponse` solo son una forma de leer del disco por trozos en el servidor, no la definición.
-1. **Cadenas y bytes.** Listas con `;`/`|`/`¬`/`_`, tres filas de metadatos para `Gui.Grilla`, bytes con `application/octet-stream`. JSON solo en servicios para terceros (`ld-realtime`).
+1. **Cadenas y bytes.** Listas con `;`/`|`/`¬`/`_`, tres filas de metadatos para `Gui.Grilla`, bytes con `application/octet-stream`. JSON solo en servicios para terceros (`ld-realtime`). El **paquete de bytes** conserva el concepto `byte1`/`byte2` de appDemo06–10/14 (2 bytes de longitud + texto + bytes de archivos), con tres correcciones deliberadas: longitud en **bytes** y no en caracteres, cabecera en **base 256** y texto con `TextDecoder`/UTF-8 en vez de `String.fromCharCode`. No es un protocolo nuevo: es el mismo formato corregido, y por eso **no es compatible byte a byte con los demos** (ver [formato-paquete.md](./references/formato-paquete.md)).
 2. **Un viaje por llamada, en orden.** `async/await` recursivo; avanza solo con `OK`; `<progress>` y contadores; un fallo detiene la cola y permite reintentar.
 3. **Límites paramétricos, una sola fuente.** `settings.LD_SIZE_LOTE` (datos máximos de un lote de archivos pequeños; por defecto **512 KB**), `settings.LD_SIZE_BLOQUE` (tamaño de cada bloque `I`/`P`; por defecto **256 KB**) y `settings.LD_MAX_ARCHIVOS_LOTE` (máximo de archivos en cada lote; por defecto **200**, configurable de 1 a 10 000), con variables de entorno homónimas y validación al arrancar (`examples/settings_transferencia.py`). Aplican a subida **y descarga**. Las vistas aplican los topes y las pantallas entregan al navegador `hdfSizeLote`, `hdfSizeBloque` y `hdfMaxArchivosLote`; el cliente debe leerlos y pasarlos a `Paquete.PlanificarViajes`. No mantengas límites duplicados en las vistas ni en JavaScript. Los 100 KB de los demos eran para iconos y miniaturas: con fotos casi nada cabe en un lote y la tanda se llena de viajes (12 fotos de 1,25 MB: 16 viajes con 100 KB, 4 con 512 KB). Antes de fijar los valores estima las llamadas: subida `2 + lotes + bloques`; galería de descarga `1 + lotes + bloques` (`Paquete.PlanificarViajes(...).length` en el cliente, que sirve para las dos direcciones). Registros: 10 000 por viaje.
    **Límites reales del servidor:** los de `LD_SIZE_*` que comprueban las vistas y, en producción, el cuerpo máximo del proxy (nginx `client_max_body_size`, IIS `maxAllowedContentLength`; déjalo por encima de `max(LD_SIZE_LOTE, LD_SIZE_BLOQUE)` más la sobrecarga multipart). `DATA_UPLOAD_MAX_MEMORY_SIZE` de Django **no** limita los archivos (solo cuenta los campos de texto) ni `FILE_UPLOAD_MAX_MEMORY_SIZE` (solo decide memoria o disco): no los uses para esto.
@@ -58,3 +60,4 @@ Detalle de cada técnica: [tecnicas.md](./references/tecnicas.md). Formato exact
 - ¿El avance se muestra por viaje y el cliente se detiene ante un error?
 - ¿Nombres, rutas, contenido y tamaños se validan en el servidor?
 - ¿La longitud del paquete se cuenta en bytes y ambos lados usan el mismo formato?
+- Si hay un endpoint heredado de un demo, ¿se migró a `Paquete`/`Leer` (los dos extremos a la vez) o se leyó con `LeerLegacy` como puente, sin mezclar formatos en la misma pantalla?

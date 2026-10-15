@@ -22,6 +22,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.dont_write_bytecode = True   # el paquete se distribuye sin __pycache__
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import consola                       # color de consola (se apaga solo sin terminal)
+except ImportError:                      # script copiado fuera del paquete: se sigue sin color
+    consola = None
+
 CANDIDATOS = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
@@ -83,11 +90,13 @@ def main(argv=None):
 
     pagina = Path(a.pagina).resolve()
     if not pagina.is_file():
-        print(f"ERROR: no existe {pagina}", file=sys.stderr)
+        linea = f"ERROR: no existe {pagina}"
+        print(consola.error(linea) if consola else linea, file=sys.stderr)
         return 2
     navegador = buscar_navegador()
     if navegador is None:
-        print("ERROR: no se encontró Chrome, Chromium, Edge ni Brave. Define LD_NAVEGADOR con la ruta del ejecutable.", file=sys.stderr)
+        linea = "ERROR: no se encontró Chrome, Chromium, Edge ni Brave. Define LD_NAVEGADOR con la ruta del ejecutable."
+        print(consola.error(linea) if consola else linea, file=sys.stderr)
         return 2
     salida = Path(a.salida) if a.salida else pagina.with_suffix("")
     salida.parent.mkdir(parents=True, exist_ok=True)
@@ -110,7 +119,7 @@ def main(argv=None):
             if capturar(navegador, envoltorio.as_uri(), destino, 600, a.alto + 800):
                 generadas.append(destino)
     for g in generadas:
-        print(g)
+        print(consola.ok(g) if consola else g)
     return 0 if generadas else 1
 
 

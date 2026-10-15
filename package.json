@@ -1,0 +1,40 @@
+{
+  "name": "shifu-ld",
+  "version": "2.9.0",
+  "description": "Skills LD (metodología de Luis Dueñas Huaroto: cadenas delimitadas, bytes, bloques, lotes y empaquetado) para Django + JS nativo, con instalador y asistente de arranque para agentes.",
+  "bin": {
+    "shifu-ld": "bin/shifu-ld.js"
+  },
+  "files": [
+    ".agents",
+    "scripts",
+    "VERSION",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "author": "Shifu Developer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElShifuDeveloper/shifu-ld.git"
+  },
+  "homepage": "https://github.com/ElShifuDeveloper/shifu-ld",
+  "bugs": {
+    "url": "https://github.com/ElShifuDeveloper/shifu-ld/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "skills",
+    "agent",
+    "opencode",
+    "claude",
+    "copilot",
+    "django",
+    "sdd",
+    "spec-kit",
+    "ld"
+  ]
+}

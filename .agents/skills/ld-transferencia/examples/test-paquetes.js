@@ -34,6 +34,29 @@ const { Paquete } = require("./Paquetes.js");
   // el texto vacío es un paquete válido sin archivos
   assert.deepStrictEqual((await Paquete.Leer(Paquete.Crear("", []))).registros, []);
 
+  // Puente de migración: paquete en el formato ANTERIOR de los demos (base 255, longitud en caracteres,
+  // texto Latin-1). Aquí se arma uno a mano (solo ASCII) y se lee con LeerLegacy; Leer no lo entendería.
+  const legacy = (texto, blobs) => new Blob([new Uint8Array([Math.floor(texto.length / 255), texto.length % 255]),
+    new TextEncoder().encode(texto)].concat(blobs));
+  const leg = legacy("foto1.jpg|3;vacio.png|0;grande.gif|1000",
+    [new Blob([new Uint8Array([1, 2, 3])]), new Blob([]), new Blob([new Uint8Array(1000).fill(7)])]);
+  const legLeido = await Paquete.LeerLegacy(leg);
+  assert.deepStrictEqual(legLeido.registros, [["foto1.jpg", "3"], ["vacio.png", "0"], ["grande.gif", "1000"]]);
+  assert.deepStrictEqual(legLeido.blobs.map((b) => b.size), [3, 0, 1000]);
+
+  // LeerLegacy rechaza paquetes truncados o manipulados igual que Leer
+  const legBueno = legacy("a|3", [new Blob([new Uint8Array([1, 2, 3])])]);
+  for (const malo of [new Blob([]), new Blob([new Uint8Array([0])]), legBueno.slice(0, legBueno.size - 1),
+                      new Blob([legBueno, new Uint8Array([9])])]) {
+    await assert.rejects(() => Paquete.LeerLegacy(malo), Error);
+  }
+
+  // La base 255 del demo solo llega a n = 65279, y Leer (base 256) NO entiende un paquete legacy:
+  // un texto ASCII de 300 bytes lleva cabecera (1, 45) que Leer interpreta como 301 y detecta el truncamiento.
+  assert.strictEqual(255 * 255 + 254, 65279);
+  const legacy300 = new Blob([new Uint8Array([1, 45]), new TextEncoder().encode("a".repeat(300))]);
+  await assert.rejects(() => Paquete.Leer(legacy300), Error);
+
   // agrupar por tamaño (mismo caso que modPaquetes.py)
   const items = [["a", 40], ["b", 40], ["c", 40], ["d", 150], ["e", 10]].map(([id, size]) => ({ id, size }));
   assert.deepStrictEqual(Paquete.AgruparPorTamano(items, 100, maxArchivosLote), [["a", "b"], ["c"], ["d"], ["e"]]);

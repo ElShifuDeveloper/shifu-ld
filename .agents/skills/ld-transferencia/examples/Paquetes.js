@@ -47,6 +47,42 @@ var Paquete = (function () {
         return { registros: registros, blobs: blobs };
     }
 
+    // Lee un paquete del formato ANTERIOR de los demos (appDemo06-10, 14); inverso de Paquete.Leer.
+    // Existe solo como puente para leer un paquete que genera un demo existente durante una migración;
+    // el formato de trabajo es Paquete.Leer. Los demos usan base 255 en la cabecera, cuentan el texto en
+    // caracteres y leen cada byte con String.fromCharCode (Latin-1, no UTF-8): solo son correctos con
+    // texto ASCII. Reproduce ese comportamiento tal cual, así que hereda sus límites (texto ASCII, n <= 65279).
+    Paquete.LeerLegacy = async function (blob, sepReg, sepCampo) {
+        sepReg = (sepReg == null ? ";" : sepReg);
+        sepCampo = (sepCampo == null ? "|" : sepCampo);
+        if (blob.size < 2) throw new Error("Paquete sin cabecera");
+        var cabecera = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+        var nTexto = cabecera[0] * 255 + cabecera[1];
+        if (blob.size < 2 + nTexto) throw new Error("Paquete truncado: falta parte del texto");
+        var bytesTexto = new Uint8Array(await blob.slice(2, 2 + nTexto).arrayBuffer());
+        // String.fromCharCode byte a byte: es exactamente lo que hace el cliente de los demos (Latin-1).
+        var texto = "";
+        for (var j = 0; j < bytesTexto.length; j++) texto += String.fromCharCode(bytesTexto[j]);
+        var registros = [];
+        var blobs = [];
+        var x = 2 + nTexto;
+        if (texto != "") {
+            var lista = texto.split(sepReg);
+            for (var i = 0; i < lista.length; i++) {
+                var campos = lista[i].split(sepCampo);
+                var size = +campos[campos.length - 1];
+                if (!Number.isInteger(size) || size < 0 || x + size > blob.size) {
+                    throw new Error("Paquete truncado o con tamaños no válidos en: " + campos[0]);
+                }
+                registros.push(campos);
+                blobs.push(blob.slice(x, x + size));
+                x += size;
+            }
+        }
+        if (x != blob.size) throw new Error("Paquete con bytes sobrantes");
+        return { registros: registros, blobs: blobs };
+    }
+
     // Arma el paquete para subirlo: texto = "nombre|size;nombre|size", blobs = [Blob/File, ...] en el mismo orden.
     // Devuelve un Blob listo para FormData.append("Blob", paquete). Inverso de Paquete.Leer.
     Paquete.Crear = function (texto, blobs) {

@@ -18,6 +18,13 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
+sys.dont_write_bytecode = True   # el paquete se distribuye sin __pycache__
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import consola                       # color de consola (se apaga solo sin terminal)
+except ImportError:                      # script copiado fuera del paquete: se sigue sin color
+    consola = None
+
 PERMITIDOS_EN_BODY = {"script", "style", "link", "template", "noscript", "main", "header", "nav", "footer", "br"}
 CLASES_ENCABEZADO = {"Titulo", "Subtitulo", "ld-encabezado", "ld-shell", "PopupContainer", "ld-ancho-total"}
 CLASES_POPUP = {"PopupWindow", "PopupImagen", "PopupContainer"}
@@ -139,13 +146,16 @@ def main(argv=None):
             return 2
         errores, avisos = revisar(p.read_text(encoding="utf-8"), modo or modo_del_proyecto(p))
         for e in errores:
-            print(f"{p}: ERROR {e}")
+            linea = f"{p}: ERROR {e}"
+            print(consola.error(linea) if consola else linea)
         for a in avisos:
-            print(f"{p}: aviso {a}")
+            linea = f"{p}: aviso {a}"
+            print(consola.aviso(linea) if consola else linea)
         if errores:
             codigo = 1
         else:
-            print(f"{p}: estructura correcta" + (f" ({len(avisos)} avisos)" if avisos else ""))
+            linea = f"{p}: estructura correcta" + (f" ({len(avisos)} avisos)" if avisos else "")
+            print(consola.ok(linea) if consola else linea)
     return codigo
 
 

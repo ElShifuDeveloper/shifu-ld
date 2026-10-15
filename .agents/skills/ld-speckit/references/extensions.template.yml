@@ -1,0 +1,151 @@
+# .specify/extensions.yml — ganchos LD para cronometrar cada etapa del SDD
+#
+# Lo instala y refresca `scripts/iniciar_proyecto.py` del paquete LD: no lo edites entre las marcas
+# LD de tiempos (ini/fin), que se reemplazan enteras. Lo que agregues fuera de esas marcas se conserva. Cada comando `/speckit.*` lee este archivo al empezar y al
+# terminar; los ganchos no llevan `condition` (el comando salta los que la tengan) y son
+# obligatorios (`optional: false`). El resultado se ve en `specs/METRICS.md`.
+hooks:
+  before_constitution:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa constitución
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio constitucion"
+      optional: false
+    # LD:tiempos:fin
+  after_constitution:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa constitución
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin constitucion"
+      optional: false
+    # LD:tiempos:fin
+  before_specify:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa especificar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio especificar"
+      optional: false
+    # LD:tiempos:fin
+  after_specify:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa especificar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin especificar"
+      optional: false
+    # LD:tiempos:fin
+  before_clarify:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa clarificar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio clarificar"
+      optional: false
+    # LD:tiempos:fin
+  after_clarify:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa clarificar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin clarificar"
+      optional: false
+    # LD:tiempos:fin
+  before_plan:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa plan
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio plan"
+      optional: false
+    # LD:tiempos:fin
+  after_plan:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa plan
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin plan"
+      optional: false
+    # LD:tiempos:fin
+  before_tasks:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa tareas
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio tareas"
+      optional: false
+    # LD:tiempos:fin
+  after_tasks:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa tareas
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin tareas"
+      optional: false
+    # LD:tiempos:fin
+  before_checklist:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa checklist
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio checklist"
+      optional: false
+    # LD:tiempos:fin
+  after_checklist:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa checklist
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin checklist"
+      optional: false
+    # LD:tiempos:fin
+  before_analyze:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa analizar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio analizar"
+      optional: false
+    # LD:tiempos:fin
+  after_analyze:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa analizar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin analizar"
+      optional: false
+    # LD:tiempos:fin
+  before_implement:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa implementar
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio implementar"
+      optional: false
+    # LD:tiempos:fin
+  after_implement:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa implementar (y recuerda cerrar el desglose)
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin implementar; después, «abiertas» para cerrar sub-etapas pendientes"
+      optional: false
+    # LD:tiempos:fin
+  before_converge:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el inicio de la etapa converger
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . inicio converger"
+      optional: false
+    # LD:tiempos:fin
+  after_converge:
+    # LD:tiempos:ini
+    - extension: ld-tiempos
+      command: ld.tiempo
+      description: Marca el fin de la etapa converger
+      prompt: "Ejecuta: python {{RUTA_PAQUETE}}/scripts/tiempos.py . fin converger"
+      optional: false
+    # LD:tiempos:fin

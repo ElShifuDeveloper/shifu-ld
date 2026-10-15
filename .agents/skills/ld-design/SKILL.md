@@ -5,6 +5,8 @@ description: "Diseña la interfaz de los proyectos LD con un aspecto moderno «S
 
 # LD_design
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Diseño visual y experiencia de usuario de los proyectos LD. Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md). Para implementar el comportamiento, [ld-frontend](../ld-frontend/SKILL.md), [ld-crud](../ld-crud/SKILL.md) y [ld-transferencia](../ld-transferencia/SKILL.md).
 
 ## Dirección visual: Soft Glass

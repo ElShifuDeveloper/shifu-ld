@@ -6,6 +6,14 @@ import unittest
 from modPaquetes import Archivos, Paquete
 
 
+def paquete_legacy(texto, lista_bytes):
+    """Arma un paquete con el formato ANTERIOR de los demos: cabecera base 255 y texto contado en
+    caracteres (no bytes). Solo válido con texto ASCII, que es el único caso que soportan los demos."""
+    bytes_texto = texto.encode("utf-8")
+    n = len(texto)
+    return bytes([n // 255, n % 255]) + bytes_texto + b"".join(lista_bytes)
+
+
 class PruebasPaquete(unittest.TestCase):
     def test_ida_y_vuelta_con_tildes(self):
         datos = [b"\x00\x01\x02", b"", b"x" * 1000]
@@ -40,6 +48,39 @@ class PruebasPaquete(unittest.TestCase):
 
     def test_paquete_vacio(self):
         self.assertEqual(Paquete.Leer(Paquete.Crear("", [])), ([], []))
+
+    def test_leer_legacy_ida_y_vuelta(self):
+        datos = [b"\x00\x01\x02", b"", b"x" * 1000]
+        texto = "foto1.jpg|3;vacio.png|0;grande.gif|1000"
+        registros, bytes_leidos = Paquete.LeerLegacy(paquete_legacy(texto, datos))
+        self.assertEqual(registros, [["foto1.jpg", "3"], ["vacio.png", "0"], ["grande.gif", "1000"]])
+        self.assertEqual(bytes_leidos, datos)
+
+    def test_leer_legacy_rechaza_invalidos(self):
+        bueno = paquete_legacy("a|3", [b"abc"])
+        for malo in (b"", b"\x00", bueno[:-1], bueno + b"x",
+                     paquete_legacy("a|xx", [b""]), bytes([0, 200]) + b"corto"):
+            with self.subTest(malo=malo):
+                with self.assertRaises(ValueError):
+                    Paquete.LeerLegacy(malo)
+
+    def test_legacy_base_255_solo_llega_a_65279(self):
+        # n = b1*255 + b2 con b1, b2 en 0..255 -> máximo 65279; 65280 exigiría un byte 256, inexistente.
+        self.assertEqual(255 * 255 + 254, 65279)
+        with self.assertRaises(ValueError):
+            bytes([256, 1])
+        texto = "a" * 65277 + "|1"                       # 65279 caracteres ASCII = 65279 bytes
+        self.assertEqual(len(texto), 65279)
+        registros, bytes_leidos = Paquete.LeerLegacy(paquete_legacy(texto, [b"z"]))
+        self.assertEqual(registros, [["a" * 65277, "1"]])
+        self.assertEqual(bytes_leidos, [b"z"])
+
+    def test_leer_no_entiende_un_paquete_legacy(self):
+        # Texto ASCII de 300 bytes: cabecera legacy base 255 = (1, 45); Leer la lee en base 256 = 301
+        # y detecta el truncamiento. Comprueba que los dos formatos no son compatibles.
+        legacy = bytes([300 // 255, 300 % 255]) + b"a" * 300
+        with self.assertRaises(ValueError):
+            Paquete.Leer(legacy)
 
     def test_agrupar_por_tamano(self):
         items = [("a", 40), ("b", 40), ("c", 40), ("d", 150), ("e", 10)]

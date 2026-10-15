@@ -5,6 +5,8 @@ description: "Crea gráficos de barras y columnas (2D/3D) en canvas o SVG, con i
 
 # LD_charts
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Gráficos y animaciones del navegador en el estilo base LD: JavaScript nativo, sin librerías, datos que llegan de un SP como texto delimitado. Basado en `appDemo17`–`appDemo25` de `webpython`.
 
 Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md). El formato de la lista está en [datos-delimitados.md](../ld-crud/references/datos-delimitados.md) y la vista Django sigue [ld-crud](../ld-crud/SKILL.md); la apariencia general, [ld-design](../ld-design/SKILL.md).

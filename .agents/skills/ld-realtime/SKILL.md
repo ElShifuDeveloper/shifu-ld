@@ -5,6 +5,8 @@ description: "Implementa servicios HTTP de solo lectura que publican datos de SP
 
 # LD_realtime
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Dos piezas que comparten un tema: exponer datos fuera de la pantalla CRUD.
 
 1. **Servicios HTTP** (`servicio01`–`servicio04`): la misma consulta en CSV, JSON o XML.

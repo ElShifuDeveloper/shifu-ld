@@ -33,15 +33,28 @@ Es idempotente: puedes repetirlo y no sobrescribe nada que ya exista sin avisar.
    `/speckit.constitution Usa el skill ld-speckit y su plantilla de constitución`.
 6. **`opencode.json`:** crea o fusiona `instructions` con `.specify/memory/constitution.md`, conservando
    cualquier otra clave.
+7. **Tiempos del SDD:** crea o actualiza `.specify/extensions.yml` con los ganchos que cronometran cada
+   etapa (9 etapas × before/after; los minutos quedan en `specs/METRICS.md`) y el comando
+   `/ld.tiempo` en `.opencode/commands/` al que apuntan los ganchos. La fusión **conserva tus
+   ganchos**: solo se reemplazan los bloques entre las marcas LD de tiempos y todo lo que esté fuera
+   de ellas queda intacto. Detalle: [tiempos.md](./tiempos.md).
 
 Al terminar imprime el siguiente paso. Opciones útiles: `--dry-run` (muestra qué haría sin escribir),
-`--sin-speckit`, `--sin-sql` / `--con-sql` (no preguntar), `--git` (ejecuta `git init` si el proyecto no es
-la raíz de su propio repositorio), `--si` (no preguntar nada, con valores por defecto).
+`--clean` / `--limpiar` (borra las versiones `*-old` que quedaron de las actualizaciones y termina;
+con `--dry-run` solo las lista), `--sin-speckit`, `--sin-sql` / `--con-sql` (no preguntar), `--git`
+(ejecuta `git init` si el proyecto no es la raíz de su propio repositorio), `--si` (no preguntar nada,
+con valores por defecto).
+
+La salida de todos los scripts del paquete va **con color** cuando es una terminal (verde lo hecho,
+amarillo los avisos, rojo los errores) y se apaga sola si la salida se redirige a un archivo o si se
+define `NO_COLOR`; en ese caso el texto es idéntico, sin códigos de escape.
 
 ## Después
 
 Reinicia OpenCode en el proyecto (las instrucciones se leen al iniciar) y sigue con
 `/speckit.specify`. Si dudas de la etapa, pregunta "¿qué sigue?" ([flujo.md](./flujo.md)).
+A partir de ahí, marca el inicio y el fin de cada etapa con `scripts/tiempos.py`: los minutos quedan
+en `specs/METRICS.md` ([tiempos.md](./tiempos.md)).
 
 ## Qué no automatiza
 
@@ -59,6 +72,7 @@ instaló.
 ```
 python <paquete>/scripts/iniciar_proyecto.py <proyecto> --version   # solo lectura: versión instalada y disponible, qué difiere y qué cambió
 python <paquete>/scripts/iniciar_proyecto.py <proyecto> --update    # lleva TODO a la versión del paquete; lo anterior queda como *-old
+python <paquete>/scripts/iniciar_proyecto.py <proyecto> --clean     # borra las versiones *-old cuando ya no las necesites
 ```
 
 `--update` no pregunta ni distingue: todo archivo del paquete (skills y kit base) que falte se instala y todo el que difiera se reemplaza,
@@ -77,11 +91,14 @@ solo descubre `SKILL.md`). `AGENTS.md` y `opencode.json` se fusionan sin pisar l
 `AGENTS-old.md` y `opencode-old.json`.
 
 - **Las versiones `-old` se acumulan:** son tu respaldo para comparar e integrar lo que habías personalizado (por ejemplo con `git diff --no-index`).
-  Bórralas cuando ya no las necesites; `--version` cuenta cuántas hay. Si usas git, la rama y el commit previos ya son un respaldo.
+  Bórralas cuando ya no las necesites; `--version` cuenta cuántas hay y `--clean` las borra de una vez (con `--clean --dry-run` las lista antes
+  de tocar nada). Limpia también las de la raíz del proyecto (`AGENTS-old.md`, `opencode-old.json`) y las carpetas de skills retirados
+  (`ld-crud-legacy-old`). Si usas git, la rama y el commit previos ya son un respaldo.
 - **Proyectos instalados antes del versionado:** no tienen manifiesto. Sin flag, lo que coincide con el paquete queda registrado y lo que difiere se
   informa; con `--update` se regulariza todo.
 - **Constitución, especificaciones y código del proyecto no se actualizan solos.** El `CHANGELOG` dice qué enmendar; `--version` avisa si la
-  plantilla de constitución cambió desde que se generó la tuya. Los cambios de comportamiento se llevan por SDD: `/speckit.clarify` (especificación),
+  plantilla de constitución cambió desde que se generó la tuya, y también si los ganchos de tiempos (`.specify/extensions.yml`) o el comando
+  `/ld.tiempo` están desactualizados o faltan. Los cambios de comportamiento se llevan por SDD: `/speckit.clarify` (especificación),
   `/speckit.plan` y `/speckit.converge` (tareas nuevas para lo que falte en el código) antes de `/speckit.implement`.
 
-Flujo recomendado: rama nueva, `--version`, `--update`, revisar `git diff` y los `*-old`, probar y reiniciar OpenCode.
+Flujo recomendado: rama nueva, `--version`, `--update`, revisar `git diff` y los `*-old`, probar, `--clean` cuando ya no hagan falta y reiniciar OpenCode.

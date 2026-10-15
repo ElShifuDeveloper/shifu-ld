@@ -5,6 +5,8 @@ description: "Implementa la capa de datos para consultas paginadas, catálogo de
 
 # LD_data
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Diseña la capa que consulta y persiste datos para `ld-frontend` y `ld-backend`. Escoge el tipo de resultado según su consumo, tamaño y necesidad de preservar tipos, y no acoples el almacenamiento a un formato de transporte accidental. Entrada del paquete: [ld-project-coordinator](../ld-project-coordinator/SKILL.md).
 
 ## Qué leer según la tarea

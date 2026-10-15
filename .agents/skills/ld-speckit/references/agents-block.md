@@ -1,10 +1,16 @@
 ## Desarrollo web (skills LD)
 
-Para cualquier solicitud de construir, corregir o ampliar una aplicación web con
-Django y JavaScript nativo, carga primero el skill `ld-project-coordinator` y
-sigue sus indicaciones; él decide qué otros skills `ld-*` participan y si el
-trabajo va en modo rápido o con especificación. No hace falta que la persona
-nombre los skills.
+Para cualquier solicitud de construir, corregir o ampliar una aplicación web,
+carga primero el skill `ld-project-coordinator` y sigue sus indicaciones; él
+decide qué otros skills `ld-*` participan y si el trabajo va en modo rápido o con
+especificación. No hace falta que la persona nombre los skills.
+
+El **stack** y el **modo de desarrollo** elegidos al instalar están en
+`.ld/config.json` (`{"stack": "ld|actual|definir", "modo": "sdd|vibe", ...}`).
+Léelo antes de decidir: con `modo` «vibe», trabaja guiado por chat y **no
+propongas ni ejecutes `/speckit.*`** salvo que la persona lo pida; con `modo`
+«sdd», el flujo de Spec Kit es el camino normal. Con `stack` distinto de «ld»,
+**no impongas** el kit base ni el estilo LD: adáptate al stack real del proyecto.
 
 Esta regla aplica también cuando la instrucción viene de un comando `/speckit.*`
 (`constitution`, `specify`, `clarify`, `plan`, `tasks`, `analyze`, `implement`).
@@ -35,3 +41,8 @@ Reglas mínimas, en cualquier modo:
   el patrón de los appDemo en lugar de inventar funciones o protocolos.
 - No se escriben secretos ni rutas personales en el código.
 - Antes de usar un procedimiento almacenado, se lee su definición real.
+- Cada etapa de `/speckit.*` se cronometra sola: los ganchos de `.specify/extensions.yml` marcan su
+  inicio y su fin (minutos en `specs/METRICS.md`, con el desglose de la implementación a cargo del
+  agente). Si al responder «¿qué sigue?» hay etapas abiertas, ciérralas o avísalas.
+- Las respuestas van con estructura y semáforo (`✅` hecho y verificado, `⚠️` pendiente, `❌` bloqueo),
+  tablas para comparar y el siguiente paso al final; los scripts del paquete emiten color cuando hay terminal.

@@ -5,11 +5,13 @@ Uso:
     python scripts/iniciar_proyecto.py <proyecto>              # instala lo que falte (no pisa nada)
     python scripts/iniciar_proyecto.py <proyecto> --version    # versión instalada y disponible, diferencias y cambios (solo lectura)
     python scripts/iniciar_proyecto.py <proyecto> --update     # lleva todo a la versión del paquete; lo anterior queda como *-old
+    python scripts/iniciar_proyecto.py <proyecto> --clean      # borra las versiones *-old que quedaron de las actualizaciones
 
 `--update` reemplaza TODO archivo que difiera del paquete. La versión anterior no se pierde: queda al lado con el sufijo -old
 (General.js -> General-old.js; si ya existe, General-old-2.js, etc.). Cada instalación se registra en <proyecto>/.ld/manifest.json
 (versión y huella de cada archivo). Es idempotente. No avanza las etapas de Spec Kit (specify, clarify, plan, tasks, analyze,
 implement): esas requieren revisión humana.
+La salida va con color cuando es una terminal (se apaga sola con NO_COLOR o si se redirige).
 Detalle y opciones: .agents/skills/ld-speckit/references/instalacion.md
 """
 import argparse
@@ -22,6 +24,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+sys.dont_write_bytecode = True   # el paquete se distribuye sin __pycache__
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import consola                      # colores de consola del paquete (se apagan solos sin terminal)
+except ImportError:                     # script copiado fuera del paquete: se sigue sin color
+    consola = None
 
 RAIZ = Path(__file__).resolve().parent.parent
 SKILLS_ORIGEN = RAIZ / ".agents" / "skills"
@@ -48,8 +57,21 @@ KIT = {
 }
 OBSOLETOS = {"ld-crud-legacy": "ld-crud"}   # skill retirado -> reemplazo
 MANIFIESTO = ".ld/manifest.json"
+RUTA_CONFIG = ".ld/config.json"   # {"stack": ..., "stack_detalle": ..., "modo": "sdd|vibe", "sql": bool}; --update no lo toca
+STACKS = ("ld", "actual", "definir")   # ld: kit base y estilo LD; actual/definir: solo skills, el agente se adapta
+MODOS = ("sdd", "vibe")
+RUTA_COMANDO_INICIAR = ".opencode/commands/shifu.iniciar.md"
+PLANTILLA_COMANDO_INICIAR = SKILLS_ORIGEN / "ld-speckit" / "examples" / "shifu.iniciar.md"
 PREFIJOS_SKILLS = (".agents/skills/",)
 PREFIJOS_KIT = ("Modulos/", "Static/")
+PATRON_OLD = re.compile(r"-old(-\d+)?(\.[^./]+)?$")   # General-old.js, SKILL-old.md, ld-crud-legacy-old, …
+# Ganchos de tiempos del SDD (SPEC Kit lee .specify/extensions.yml antes y después de cada comando)
+RUTA_EXTENSIONES = ".specify/extensions.yml"
+RUTA_COMANDO_TIEMPOS = ".opencode/commands/ld.tiempo.md"
+PLANTILLA_EXTENSIONES = REFS / "extensions.template.yml"
+PLANTILLA_COMANDO_TIEMPOS = SKILLS_ORIGEN / "ld-speckit" / "examples" / "ld.tiempo.md"
+MARCA_TIEMPOS_INI = "# LD:tiempos:ini"
+MARCA_TIEMPOS_FIN = "# LD:tiempos:fin"
 
 
 # ---------------------------------------------------------------- funciones puras
@@ -348,12 +370,171 @@ def resumen_sincronizacion(cont, det, modo, limite=10):
 
 def contar_old(proy):
     """Cantidad de versiones anteriores (*-old) que hay en las carpetas que gestiona LD."""
-    patron = re.compile(r"-old(-\d+)?(\.[^./]+)?$")
     total = 0
     for base in (proy / ".agents" / "skills", proy / "Modulos", proy / "Static"):
         if base.exists():
-            total += sum(1 for f in base.rglob("*") if f.is_file() and patron.search(f.name))
+            total += sum(1 for f in base.rglob("*") if f.is_file() and PATRON_OLD.search(f.name))
     return total
+
+
+# ---------------------------------------------------------------- limpieza de *-old
+def entradas_old(proy):
+    """Archivos y carpetas *-old que LD dejó en el proyecto: skills, kit base y raíz (AGENTS-old.md…).
+
+    Devuelve solo las entradas más superficiales: si una carpeta `x-old` está en la lista,
+    sus hijos `x-old/inner-old.md` no se repiten (se borran con la carpeta).
+    """
+    rutas = set()
+    for base in (proy / ".agents" / "skills", proy / "Modulos", proy / "Static"):
+        if base.exists():
+            rutas.update(p for p in base.rglob("*") if PATRON_OLD.search(p.name))
+    if proy.exists():
+        rutas.update(p for p in proy.iterdir() if PATRON_OLD.search(p.name))
+    return sorted(p for p in rutas if not any(q != p and p.is_relative_to(q) for q in rutas))
+
+
+def limpiar_old(proy, seco=False):
+    """Borra las versiones *-old (con `seco`, solo las cuenta). Devuelve (archivos, carpetas, lista)."""
+    entradas = entradas_old(proy)
+    archivos = [p for p in entradas if p.is_file()]
+    carpetas = [p for p in entradas if p.is_dir()]
+    if not seco:
+        for p in archivos:
+            try:
+                p.unlink()
+            except OSError:
+                pass
+        for p in carpetas:
+            shutil.rmtree(p, ignore_errors=True)
+    return len(archivos), len(carpetas), entradas
+
+
+def pintar_lineas(lineas):
+    """Líneas con color por contenido (sin color si no hay terminal)."""
+    return "\n".join(consola.decorar(l) if consola else l for l in lineas)
+
+
+# ------------------------------------------------- ganchos de tiempos (extensions.yml)
+def render_tiempos(texto):
+    """Reemplaza {{RUTA_PAQUETE}} por la ruta absoluta del paquete (los ganchos llaman a scripts/tiempos.py)."""
+    return texto.replace("{{RUTA_PAQUETE}}", str(RAIZ))
+
+
+def sha_texto(texto):
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
+def bloques_tiempos(plantilla):
+    """{fase: [líneas del bloque LD, marcadores incluidos]} extraído de la plantilla renderizada."""
+    bloques, fase, buffer = {}, None, None
+    for linea in plantilla.splitlines():
+        despojada = linea.strip()
+        if re.match(r"^\s{2}[A-Za-z_]+:\s*$", linea):
+            fase = despojada[:-1]
+            continue
+        if despojada == MARCA_TIEMPOS_INI:
+            buffer = [linea]
+            continue
+        if despojada == MARCA_TIEMPOS_FIN and buffer is not None:
+            buffer.append(linea)
+            bloques[fase] = buffer
+            buffer = None
+            continue
+        if buffer is not None:
+            buffer.append(linea)
+    return bloques
+
+
+def fusionar_extensiones(existente, plantilla):
+    """YAML con los bloques de tiempos al día, conservando todo lo que esté fuera de las marcas LD.
+
+    - Sin archivo (o vacío) → la plantilla tal cual.
+    - Con archivo → quita los bloques LD anteriores (por marcas o por «- extension: ld-tiempos») y los
+      vuelve a insertar tras su fase; las fases que falten se agregan al final del bloque `hooks:`.
+    Es idempotente: volver a fusionar el resultado no cambia nada.
+    """
+    if not existente.strip():
+        return plantilla
+    bloques = bloques_tiempos(plantilla)
+    limpias, dentro, saltar_indent = [], False, None
+    for linea in existente.splitlines():
+        despojada = linea.strip()
+        indent = len(linea) - len(linea.lstrip())
+        if saltar_indent is not None:                      # continuación de una entrada LD sin marcas
+            if despojada == "" or indent > saltar_indent:
+                continue
+            saltar_indent = None
+        if despojada == MARCA_TIEMPOS_INI:
+            dentro = True
+            continue
+        if despojada == MARCA_TIEMPOS_FIN:
+            dentro = False
+            continue
+        if dentro:
+            continue
+        if despojada.startswith("- extension: ld-tiempos"):
+            saltar_indent = indent
+            continue
+        limpias.append(linea)
+    faltantes = []
+    for fase, bloque in bloques.items():
+        patron = re.compile(r"^\s*" + re.escape(fase) + r":\s*$")
+        pos = next((i for i, l in enumerate(limpias) if patron.match(l)), None)
+        if pos is None:
+            faltantes += [f"  {fase}:"] + bloque
+        else:
+            limpias[pos + 1:pos + 1] = bloque
+    if faltantes:
+        idx = next((i for i, l in enumerate(limpias) if re.match(r"^hooks:\s*$", l)), None)
+        if idx is None:
+            limpias += ["", "hooks:"] + faltantes
+        else:
+            fin = len(limpias)
+            for j in range(idx + 1, len(limpias)):
+                if limpias[j].strip() and not limpias[j].startswith((" ", "\t")):
+                    fin = j
+                    break
+            limpias[fin:fin] = faltantes
+    return "\n".join(limpias).rstrip() + "\n"
+
+
+def estado_tiempos(proy):
+    """Líneas del estado de los ganchos y del comando /ld.tiempo (para --version y para instalar)."""
+    lineas = []
+    if not (proy / ".specify").exists():
+        return ["ganchos de tiempos: omitidos (aún no hay .specify; se instalan al inicializar Spec Kit)"]
+    plantilla_ext = render_tiempos(PLANTILLA_EXTENSIONES.read_text(encoding="utf-8"))
+    ruta_ext = proy / RUTA_EXTENSIONES
+    actual_ext = ruta_ext.read_text(encoding="utf-8") if ruta_ext.exists() else ""
+    if not actual_ext:
+        lineas.append("ganchos de tiempos: no instalados; --update los instala (cronometran cada etapa en specs/METRICS.md)")
+    elif fusionar_extensiones(actual_ext, plantilla_ext) != actual_ext:
+        lineas.append("ganchos de tiempos: desactualizados o incompletos; --update los refresca (tus ganchos, fuera de las marcas LD, se conservan)")
+    else:
+        lineas.append("ganchos de tiempos: al día (9 etapas × before/after)")
+    plantilla_cmd = render_tiempos(PLANTILLA_COMANDO_TIEMPOS.read_text(encoding="utf-8"))
+    ruta_cmd = proy / RUTA_COMANDO_TIEMPOS
+    actual_cmd = ruta_cmd.read_text(encoding="utf-8") if ruta_cmd.exists() else ""
+    if not actual_cmd:
+        lineas.append("comando /ld.tiempo: no instalado; --update lo instala (Spec Kit puede regenerar .opencode/commands/)")
+    elif actual_cmd != plantilla_cmd:
+        lineas.append("comando /ld.tiempo: desactualizado; --update lo refresca")
+    else:
+        lineas.append("comando /ld.tiempo: al día")
+    return lineas
+
+
+def informe_clean(proy, seco):
+    """Informe de `--clean`: qué se borró (o se borraría con --dry-run). Devuelve líneas."""
+    archivos, carpetas, entradas = limpiar_old(proy, seco)
+    if not entradas:
+        return ["*(sin versiones -old)* no hay versiones *-old en el proyecto: nada que limpiar"]
+    lineas = [f"{'[simulación] ' if seco else ''}{archivos} archivos y {carpetas} carpetas *-old "
+              + ("por borrar:" if seco else "borrados:")]
+    lineas += ["    - " + str(p.relative_to(proy)) for p in entradas[:10]]
+    if len(entradas) > 10:
+        lineas.append(f"    … y {len(entradas) - 10} más")
+    return lineas
 
 
 # ---------------------------------------------------------------- diseño visual
@@ -384,6 +565,40 @@ def skill_disponible(proy, nombre):
     return any((d / base).is_dir() for d in (proy / ".agents" / "skills", Path.home() / ".agents" / "skills"))
 
 
+# ---------------------------------------------------------------- stack y modo de desarrollo
+def leer_config(proy):
+    """Devuelve el stack y el modo elegidos ({"stack": ..., "modo": ...}) o None si no hay o está dañado."""
+    ruta = proy / RUTA_CONFIG
+    try:
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(datos, dict) or datos.get("stack") not in STACKS or datos.get("modo") not in MODOS:
+        return None
+    return datos
+
+
+def validar_stack(stack, detalle):
+    """Valida la elección de stack. Devuelve (config, error)."""
+    if stack not in STACKS:
+        return None, "el stack debe ser «ld», «actual» o «definir»"
+    detalle = (detalle or "").strip()
+    if stack == "definir":
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 .,+/():_-]{0,79}", detalle):
+            return None, "con stack «definir» describe el stack con --stack-detalle <texto>"
+        return {"stack": "definir", "stack_detalle": detalle}, None
+    if detalle:
+        return None, "el detalle del stack solo aplica con --stack definir"
+    return {"stack": stack, "stack_detalle": ""}, None
+
+
+def validar_modo(modo):
+    """Valida el modo de desarrollo. Devuelve (config, error)."""
+    if modo not in MODOS:
+        return None, "el modo debe ser «sdd» o «vibe»"
+    return {"modo": modo}, None
+
+
 # ---------------------------------------------------------------- interacción
 def preguntar(texto, defecto, interactivo):
     if not interactivo:
@@ -399,6 +614,21 @@ def preguntar_si_no(texto, defecto, interactivo):
     return defecto if not r else r.startswith(("s", "y"))
 
 
+def preguntar_opcion(texto, opciones, defecto, interactivo):
+    """Menú numerado; acepta el número o la clave. `opciones`: [(clave, etiqueta)]. Devuelve la clave."""
+    if not interactivo:
+        return defecto
+    claves = [c for c, _ in opciones]
+    for i, (_, etiqueta) in enumerate(opciones, 1):
+        print(f"  {i}) {etiqueta}")
+    r = input(f"{texto} [{defecto}]: ").strip().lower()
+    if not r:
+        return defecto
+    if r.isdigit() and 1 <= int(r) <= len(opciones):
+        return claves[int(r) - 1]
+    return r if r in claves else defecto
+
+
 # ---------------------------------------------------------------- informe de versión
 def informe_version(proy):
     """Líneas del informe de --version (solo lectura): versión, diferencias, cambios del paquete y constitución."""
@@ -411,7 +641,11 @@ def informe_version(proy):
     lineas += resumen_sincronizacion(cont, det, "version")
     viejas = contar_old(proy)
     if viejas:
-        lineas.append(f"{viejas} versiones anteriores (*-old) en el proyecto; puedes borrarlas cuando ya no las necesites")
+        lineas.append(f"{viejas} versiones anteriores (*-old) en el proyecto; puedes borrarlas cuando ya no las necesites (--clean las borra)")
+    cfg = leer_config(proy)
+    if cfg:
+        stack_txt = cfg["stack"] if cfg["stack"] != "definir" else f"definir ({cfg.get('stack_detalle')})"
+        lineas.append(f"modo de desarrollo: {cfg['modo']} | stack: {stack_txt} | SQL: {'sí' if cfg.get('sql') else 'no'}")
     pendientes = (cont["por_actualizar"] + cont["modificados"] + cont["sin_registro"] + cont["retirables"] + cont["instalados"])
     ch = RAIZ / "CHANGELOG.md"
     if ch.exists():
@@ -441,6 +675,7 @@ def informe_version(proy):
         bloque = (REFS / "agents-block.md").read_text(encoding="utf-8")
         actual = ruta_agents.read_text(encoding="utf-8") if ruta_agents.exists() else ""
         lineas.append("AGENTS.md: bloque LD " + ("al día" if fusionar_agents(actual, bloque)[0] == actual else "desactualizado (--update lo refresca y deja AGENTS-old.md)"))
+    lineas += estado_tiempos(proy)
     lineas.append("resultado: " + ("hay cambios por aplicar: python scripts/iniciar_proyecto.py <proyecto> --update"
                                    if pendientes or not man else "al día"))
     return lineas
@@ -454,6 +689,8 @@ def main(argv=None, ejecutar_comando=subprocess.run):
     ap.add_argument("--skills", choices=["proyecto", "global", "omitir"], default="proyecto")
     ap.add_argument("--version", action="store_true", help="solo lectura: versión instalada y disponible, diferencias con el paquete y cambios")
     ap.add_argument("--update", action="store_true", help="lleva todo a la versión del paquete; lo anterior queda como *-old")
+    ap.add_argument("--clean", "--limpiar", dest="clean", action="store_true",
+                    help="borra las versiones *-old del proyecto (skills, kit base y raíz) y termina; con --dry-run solo las lista")
     ap.add_argument("--sin-speckit", action="store_true", help="no ejecutes `specify init`")
     ap.add_argument("--sin-base", action="store_true", help="no instales el kit base (Modulos/ y Static/)")
     g = ap.add_mutually_exclusive_group()
@@ -461,6 +698,11 @@ def main(argv=None, ejecutar_comando=subprocess.run):
     g.add_argument("--sin-sql", dest="sql", action="store_false")
     ap.add_argument("--diseno", choices=["ld", "externo"], help="estilo visual: «ld» (Soft Glass del paquete, sin librerías) o «externo» (otro skill de diseño); se guarda en .ld/diseno.json")
     ap.add_argument("--skill-diseno", help="nombre del skill de diseño externo (con --diseno externo)")
+    ap.add_argument("--stack", choices=list(STACKS),
+                    help="stack del proyecto: «ld» (Django + JS nativo + General.js + SPs, instala el kit base), «actual» (respetar el stack existente: solo copia los skills) o «definir» (con --stack-detalle); se guarda en .ld/config.json")
+    ap.add_argument("--stack-detalle", help="descripción del stack cuando --stack definir")
+    ap.add_argument("--modo", choices=list(MODOS),
+                    help="modo de desarrollo: «sdd» (Spec Kit, recomendado) o «vibe» (código guiado por chat); se guarda en .ld/config.json")
     ap.add_argument("--git", action="store_true", help="`git init` si el proyecto no es la raíz de su repositorio")
     ap.add_argument("--si", action="store_true", help="no preguntes nada; usa valores por defecto")
     ap.add_argument("--dry-run", action="store_true", help="muestra lo que haría sin escribir")
@@ -471,7 +713,15 @@ def main(argv=None, ejecutar_comando=subprocess.run):
         if not proy.exists():
             print(f"ERROR: no existe {proy}", file=sys.stderr)
             return 2
-        print("\n".join(l if l.startswith(("    ", "  [")) else f"- {l}" for l in informe_version(proy)))
+        print(pintar_lineas([l if l.startswith(("    ", "  [")) else f"- {l}"
+                             for l in informe_version(proy)]))
+        return 0
+
+    if a.clean:
+        if not proy.exists():
+            print(f"ERROR: no existe {proy}", file=sys.stderr)
+            return 2
+        print(pintar_lineas(informe_clean(proy, seco=a.dry_run)))
         return 0
 
     interactivo = sys.stdin.isatty() and not a.si
@@ -487,7 +737,45 @@ def main(argv=None, ejecutar_comando=subprocess.run):
     if not proy.exists():
         hacer(f"crear la carpeta {proy}", lambda: proy.mkdir(parents=True))
     nombre = a.nombre or preguntar("Nombre del proyecto", proy.name, interactivo)
-    usa_sql = a.sql if a.sql is not None else preguntar_si_no("¿Usará SQL Server con procedimientos almacenados?", True, interactivo)
+
+    # 0) stack y modo de desarrollo: se preguntan una sola vez y se recuerdan en .ld/config.json
+    config_actual = leer_config(proy)
+    stack = a.stack or (config_actual or {}).get("stack")
+    stack_detalle = a.stack_detalle or (config_actual or {}).get("stack_detalle", "")
+    if stack is None:
+        stack = preguntar_opcion("Stack del proyecto", [
+            ("ld", "recomendado LD: Django + JS nativo + General.js + SPs"),
+            ("actual", "respetar el stack actual (solo copia los skills; no impone kit base ni estilo LD)"),
+            ("definir", "definirlo (descríbelo)"),
+        ], "ld", interactivo)
+    if stack == "definir" and not stack_detalle:
+        stack_detalle = preguntar("Describe el stack (p. ej. «FastAPI + React»)", "", interactivo)
+    modo_desarrollo = a.modo or (config_actual or {}).get("modo")
+    if modo_desarrollo is None:
+        modo_desarrollo = preguntar_opcion("Modo de desarrollo", [
+            ("sdd", "SDD + Spec Kit (recomendado)"),
+            ("vibe", "Vibe coding (código guiado por chat)"),
+        ], "sdd", interactivo)
+    cfg_stack, error_s = validar_stack(stack, stack_detalle)
+    if error_s:
+        print(f"ERROR: {error_s}", file=sys.stderr)
+        return 2
+    cfg_modo, error_m = validar_modo(modo_desarrollo)
+    if error_m:
+        print(f"ERROR: {error_m}", file=sys.stderr)
+        return 2
+    stack, stack_detalle, modo_desarrollo = cfg_stack["stack"], cfg_stack["stack_detalle"], cfg_modo["modo"]
+    usa_sql = a.sql if a.sql is not None else (stack == "ld")
+    nuevo_config = {"stack": stack, "stack_detalle": stack_detalle, "modo": modo_desarrollo, "sql": bool(usa_sql)}
+    if not (config_actual and all(config_actual.get(k) == v for k, v in nuevo_config.items())):
+        def escribir_config():
+            ruta = proy / RUTA_CONFIG
+            ruta.parent.mkdir(parents=True, exist_ok=True)
+            ruta.write_text(json.dumps(nuevo_config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        etiqueta = "estilo LD" if stack == "ld" else (f"stack «{stack_detalle}»" if stack == "definir" else "stack actual")
+        hacer(f"guardar {etiqueta} y modo {modo_desarrollo} en {RUTA_CONFIG}", escribir_config)
+    if stack != "ld":
+        log.append(f"stack {stack}: no se instala el kit base (Modulos/ y Static/); solo se copian los skills y el agente se adapta al proyecto")
 
     manifiesto = leer_manifiesto(proy) or {}
     registro = dict(manifiesto.get("archivos", {}))
@@ -495,7 +783,7 @@ def main(argv=None, ejecutar_comando=subprocess.run):
 
     # 1) skills en la carpeta del proyecto + kit base, archivo por archivo, con manifiesto
     en_proyecto = a.skills == "proyecto"
-    incluir_kit = not a.sin_base
+    incluir_kit = not a.sin_base and stack == "ld"
     if en_proyecto or incluir_kit:
         skills_dir = proy / ".agents" / "skills"
         if en_proyecto:
@@ -564,7 +852,11 @@ def main(argv=None, ejecutar_comando=subprocess.run):
 
     # 2b) estilo visual: «ld» (por defecto) o un skill de diseño externo; se pregunta una sola vez y se recuerda en .ld/diseno.json
     diseno_actual = leer_diseno(proy)
-    if a.diseno or a.skill_diseno or diseno_actual is None:
+    # el estilo LD solo se define con el stack LD (o si se pide explícitamente); con otro stack no se impone
+    definir_diseno = stack == "ld" or bool(a.diseno or a.skill_diseno or diseno_actual is not None)
+    if not definir_diseno:
+        log.append("diseño: no se define (stack distinto de LD); usa --diseno ld|externo si quieres fijarlo")
+    if definir_diseno and (a.diseno or a.skill_diseno or diseno_actual is None):
         modo_d = a.diseno or ("externo" if a.skill_diseno else None)
         skill_d = a.skill_diseno
         if modo_d is None:
@@ -650,20 +942,82 @@ def main(argv=None, ejecutar_comando=subprocess.run):
     else:
         log.append("opencode.json: omitido (aún no hay constitución)")
 
+    # 6) ganchos de tiempos: .specify/extensions.yml (cronometra cada etapa) + comando /ld.tiempo
+    if (proy / ".specify").exists():
+        plantilla_ext = render_tiempos(PLANTILLA_EXTENSIONES.read_text(encoding="utf-8"))
+        ruta_ext = proy / RUTA_EXTENSIONES
+        actual_ext = ruta_ext.read_text(encoding="utf-8") if ruta_ext.exists() else ""
+        nuevo_ext = fusionar_extensiones(actual_ext, plantilla_ext)
+        if nuevo_ext != actual_ext:
+            def escribir_ext():
+                ruta_ext.parent.mkdir(parents=True, exist_ok=True)
+                if actual_ext and modo == "update":
+                    apartar_como_old_copia(ruta_ext)
+                ruta_ext.write_text(nuevo_ext, encoding="utf-8")
+                manifiesto["extensiones"] = {"sha256": sha_texto(nuevo_ext)}
+            hacer(("actualizar" if actual_ext else "crear") + f" {RUTA_EXTENSIONES} con los ganchos de tiempos"
+                  + (f" (la versión previa queda como extensions-old.yml)" if actual_ext and modo == "update" else ""),
+                  escribir_ext)
+        else:
+            log.append("ganchos de tiempos: al día (9 etapas × before/after)")
+        plantilla_cmd = render_tiempos(PLANTILLA_COMANDO_TIEMPOS.read_text(encoding="utf-8"))
+        ruta_cmd = proy / RUTA_COMANDO_TIEMPOS
+        actual_cmd = ruta_cmd.read_text(encoding="utf-8") if ruta_cmd.exists() else ""
+        if plantilla_cmd != actual_cmd:
+            def escribir_cmd():
+                ruta_cmd.parent.mkdir(parents=True, exist_ok=True)
+                if actual_cmd and modo == "update":
+                    apartar_como_old_copia(ruta_cmd)
+                ruta_cmd.write_text(plantilla_cmd, encoding="utf-8")
+                manifiesto["comando_tiempos"] = {"sha256": sha_texto(plantilla_cmd)}
+            hacer(("actualizar" if actual_cmd else "crear") + f" {RUTA_COMANDO_TIEMPOS} (comando /ld.tiempo, destino de los ganchos)",
+                  escribir_cmd)
+        else:
+            log.append("comando /ld.tiempo: al día")
+    else:
+        log.append("ganchos de tiempos: omitidos (aún no hay .specify; se instalan al inicializar Spec Kit)")
+
+    # 7) comando /shifu.iniciar (asistente de instalación dentro de OpenCode)
+    if PLANTILLA_COMANDO_INICIAR.exists():
+        plantilla_ini = render_tiempos(PLANTILLA_COMANDO_INICIAR.read_text(encoding="utf-8"))
+        ruta_ini = proy / RUTA_COMANDO_INICIAR
+        actual_ini = ruta_ini.read_text(encoding="utf-8") if ruta_ini.exists() else ""
+        if plantilla_ini != actual_ini:
+            def escribir_ini():
+                ruta_ini.parent.mkdir(parents=True, exist_ok=True)
+                if actual_ini and modo == "update":
+                    apartar_como_old_copia(ruta_ini)
+                ruta_ini.write_text(plantilla_ini, encoding="utf-8")
+                manifiesto["comando_iniciar"] = {"sha256": sha_texto(plantilla_ini)}
+            hacer(("actualizar" if actual_ini else "crear") + f" {RUTA_COMANDO_INICIAR} (comando /shifu.iniciar)", escribir_ini)
+        else:
+            log.append("comando /shifu.iniciar: al día")
+
     # manifiesto: versión instalada y huella de cada archivo que LD instaló
     if escribe_manifiesto and not seco:
         manifiesto["version"] = version_paquete()
         manifiesto["archivos"] = registro
         escribir_manifiesto(proy, manifiesto)
         if contar_old(proy) or (proy / "AGENTS-old.md").exists():
-            log.append(f"hay versiones anteriores *-old: revísalas y bórralas cuando ya no las necesites; el manifiesto {MANIFIESTO} sí conviene versionarlo")
+            log.append(f"hay versiones anteriores *-old: revísalas y bórralas cuando ya no las necesites (--clean las borra); el manifiesto {MANIFIESTO} sí conviene versionarlo")
 
-    print("\n".join(l if l.startswith("    ") else f"- {l}" for l in log))
-    if modo == "instalar":
-        print("\nSiguiente paso: reinicia OpenCode en el proyecto y ejecuta /speckit.specify <qué debe poder hacer cada usuario>."
-              "\nSi dudas de la etapa, pregunta «¿qué sigue?». Para ver si hay una versión nueva del paquete: --version.")
+    print(pintar_lineas([l if l.startswith("    ") else f"- {l}" for l in log]))
+    if modo != "instalar":
+        print(pintar_lineas([
+            "\nRevisa el diff (git diff), prueba el proyecto y reinicia OpenCode para que cargue los skills nuevos.",
+            "Cuando ya no necesites las versiones *-old: --clean."]))
+    elif modo_desarrollo == "vibe":
+        print(pintar_lineas([
+            "\nModo vibe coding: pide en lenguaje natural; no hace falta /speckit.*. Ejemplos:",
+            "  - «Agrega un gráfico de stock por categoría en la pantalla de productos, como en la de categorías.»",
+            "  - «Crea una pantalla de consulta de clientes con grilla y paginación, estilo LD.»",
+            "  - «Sube imágenes de productos por lotes con barra de progreso.»",
+            "Si luego quieres SDD: repite con --modo sdd y sigue con /speckit.specify."]))
     else:
-        print("\nRevisa el diff (git diff), prueba el proyecto y reinicia OpenCode para que cargue los skills nuevos.")
+        print(pintar_lineas([
+            "\nSiguiente paso: reinicia OpenCode en el proyecto y ejecuta /speckit.specify <qué debe poder hacer cada usuario>.",
+            "Si dudas de la etapa, pregunta «¿qué sigue?». Para ver si hay una versión nueva del paquete: --version.",
+            "Para registrar los tiempos de cada etapa del SDD: scripts/tiempos.py (ver METRICS.md que se crea en specs/)."]))
     return 0
 
 

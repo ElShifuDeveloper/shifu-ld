@@ -6,6 +6,13 @@ El punto de entrada es [ld-project-coordinator](.agents/skills/ld-project-coordi
 la persona describe la necesidad en lenguaje natural y el coordinador decide
 qué skills especializados participan.
 
+## Créditos y origen
+
+La metodología **LD** —cadenas delimitadas, bytes, bloques, lotes y empaquetado— la creó y
+enseñó **Luis Dueñas Huaroto**, y de él proviene el nombre «LD». Este paquete la recopila y la
+documenta para que los agentes la apliquen; se distribuye con este reconocimiento para que quien
+lo descargue sepa de dónde viene.
+
 ## Skills incluidos
 
 - [ld-project-coordinator](.agents/skills/ld-project-coordinator/SKILL.md):
@@ -37,18 +44,31 @@ qué skills especializados participan.
 
 ## Inicio rápido
 
-Para un proyecto nuevo (o uno que aún no tiene los skills) basta un comando:
+Con Node (no necesitas clonar nada) y **Python 3** en el PATH:
+
+```
+npx github:ElShifuDeveloper/shifu-ld <ruta-del-proyecto>
+```
+
+También, desde una copia local del paquete:
 
 ```
 python <ruta-al-paquete>/scripts/iniciar_proyecto.py <ruta-del-proyecto>
 ```
 
-Instala los skills y el kit base del estilo LD (`Modulos/` y `Static/`, solo lo que falte), inicializa Spec Kit
-con la integración de OpenCode si falta, crea o actualiza el bloque LD de `AGENTS.md`, genera la constitución con
-el nombre del proyecto y enlaza la constitución en `opencode.json`. Es idempotente, no sobrescribe sin avisar y admite `--dry-run` para ver antes lo
-que haría. Después reinicia OpenCode en el proyecto y ejecuta
-`/speckit.specify <qué debe poder hacer cada usuario>`; si dudas de la etapa, pregunta «¿qué sigue?».
-Detalle y opciones: [instalacion.md](.agents/skills/ld-speckit/references/instalacion.md).
+El instalador es un **asistente de dos preguntas** y recuerda la elección:
+
+1. **Stack:** 1) recomendado LD — Django + JS nativo + `General.js` + SPs (instala el kit base);
+   2) respetar el stack actual — solo copia los skills; 3) definirlo.
+2. **Modo de desarrollo:** 1) SDD + Spec Kit (recomendado); 2) Vibe coding.
+
+La respuesta queda en `.ld/config.json` y los skills la respetan. Después:
+
+- **SDD**: reinicia OpenCode y ejecuta `/speckit.specify <qué debe poder hacer cada usuario>`.
+- **Vibe coding**: pide en lenguaje natural (el instalador imprime prompts de ejemplo); no hace falta `/speckit.*`.
+
+Dentro de OpenCode, el mismo asistente está en el comando **`/shifu.iniciar`**. Con `--si` no pregunta
+nada (usa `ld` + `sdd`). Detalle y opciones: [instalacion.md](.agents/skills/ld-speckit/references/instalacion.md).
 
 ## Versiones y actualización
 
@@ -58,11 +78,44 @@ instaló en `.ld/manifest.json`, y `--update` reemplaza todo lo que difiera (tam
 ```
 python <ruta-al-paquete>/scripts/iniciar_proyecto.py <proyecto> --version   # solo lectura: versión, diferencias y cambios
 python <ruta-al-paquete>/scripts/iniciar_proyecto.py <proyecto> --update    # reemplaza todo por la versión del paquete; lo anterior queda como *-old
+python <ruta-al-paquete>/scripts/iniciar_proyecto.py <proyecto> --clean     # borra las versiones *-old cuando ya no las necesites
 ```
 
 La constitución, las especificaciones y el código no se actualizan solos: el `CHANGELOG` dice qué enmendar y los cambios de comportamiento
 siguen el flujo SDD (`/speckit.clarify`, `/speckit.plan`, `/speckit.converge`, `/speckit.implement`). Detalle en
 [instalacion.md](.agents/skills/ld-speckit/references/instalacion.md).
+
+## Medir el trabajo: tiempos por etapa (METRICS.md)
+
+Cada etapa del SDD se cronometra **sola**: `iniciar_proyecto.py` instala `.specify/extensions.yml`
+con 18 ganchos (9 etapas × before/after) que marcan el inicio y el fin de cada comando, y los minutos
+quedan en **`specs/METRICS.md`** del proyecto (una tabla por especificación, el desglose de la
+implementación y un resumen comparativo). El estado vive en `.ld/tiempos.json` y el archivo se rinde
+desde ahí: no se edita a mano.
+
+Etapas: `constitucion`, `especificar`, `clarificar`, `plan`, `tareas`, `checklist`, `analizar`,
+`implementar` y `converger`. La implementación se mide entera **y** por sub-etapas:
+`implementar:desarrollo`, `implementar:qa`, `implementar:seguridad`, `implementar:diseño`,
+`implementar:integracion` y `implementar:otros`.
+
+Manual (o cuando un gancho no llegó a correr):
+
+```
+python <ruta-al-paquete>/scripts/tiempos.py . inicio plan     # al empezar la etapa
+python <ruta-al-paquete>/scripts/tiempos.py . fin plan        # al terminarla (calcula los minutos)
+python <ruta-al-paquete>/scripts/tiempos.py . abiertas        # etapas sin cerrar
+python <ruta-al-paquete>/scripts/tiempos.py . estimar --escribir   # rellena huecos desde las fechas de archivo
+python <ruta-al-paquete>/scripts/tiempos.py . informe         # reescribe y muestra METRICS.md
+```
+
+Se aceptan los nombres de los comandos en inglés (`specify`, `tasks`, `implement:qa`…) y el comando
+`/ld.tiempo` hace lo mismo desde OpenCode. Las filas estimadas quedan marcadas como
+«estimado por fechas de archivo». Protocolo completo:
+[tiempos.md](.agents/skills/ld-speckit/references/tiempos.md).
+
+Los scripts del paquete escriben **con color** cuando la salida es una terminal (verde lo hecho,
+amarillo los avisos, rojo los errores) y sin códigos de escape en tuberías, CI o pruebas. Las
+respuestas del agente siguen la misma idea con estructura y semáforo: [estilo-salida.md](.agents/skills/ld-speckit/references/estilo-salida.md).
 
 ## Estructura del paquete
 
@@ -74,7 +127,7 @@ Cada skill carga primero solo su `SKILL.md` (procedimiento, reglas y un mapa de 
   references/     documentos de detalle, cada tema en un único lugar
   examples/       código adaptable, sin documentos largos
 VERSION, CHANGELOG.md   versión del paquete y su historial
-scripts/         iniciar_proyecto.py (arranque y actualización), validar_paquete.py (validación) capturar_pantalla.py (capturas de diseño) y revisar_diseno.py (revisión de estructura)
+scripts/         iniciar_proyecto.py (arranque, actualización y limpieza), tiempos.py (tiempos del SDD en METRICS.md), validar_paquete.py (validación), capturar_pantalla.py (capturas de diseño), revisar_diseno.py (revisión de estructura) y consola.py (colores de la salida)
 ```
 
 Fuentes únicas: el protocolo de transferencias en `ld-backend/references/transfer-contract.md`; el contrato de `clienteSQL` y los errores en `ld-data/references/cliente-sql.md`; la forma y los riesgos de cada SP en `ld-data/references/stored-procedures-review.md`; el formato de las listas delimitadas en `ld-crud/references/datos-delimitados.md`; la constitución, el *Technical Context* y el bloque de `AGENTS.md` en `ld-speckit/references/`. Los demás documentos los enlazan en vez de repetirlos.

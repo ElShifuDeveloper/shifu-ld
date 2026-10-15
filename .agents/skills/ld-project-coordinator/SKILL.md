@@ -5,6 +5,8 @@ description: "Punto de entrada automático para solicitudes de desarrollo web, c
 
 # Coordinador de sistemas web LD
 
+> Metodología **LD** (cadenas delimitadas, bytes, bloques, lotes y empaquetado) creada por **Luis Dueñas Huaroto**; documentada aquí para agentes.
+
 Este skill organiza el trabajo de producto y la colaboración entre los skills
 LD: las cuatro capas (`ld-design`, `ld-frontend`, `ld-backend`, `ld-data`) y las
 especialidades `ld-crud`, `ld-transferencia`, `ld-security-session`,
@@ -76,6 +78,14 @@ proyecto de arquitectura.
 El paquete se usa de dos maneras y el coordinador elige la más ligera que sea
 segura. Los detalles y los pedidos de ejemplo están en
 [examples/sdd-y-vibe.md](./references/sdd-y-vibe.md).
+
+El **stack** y el **modo** elegidos al instalar están en `.ld/config.json`
+(`{"stack": "ld|actual|definir", "modo": "sdd|vibe", ...}`). Respétalos: si `modo`
+es «vibe», trabaja en modo rápido y **no propongas ni ejecutes `/speckit.*`** salvo
+que la persona lo pida; si es «sdd», el flujo de Spec Kit es el camino normal. Si
+`stack` no es «ld», no impongas el kit base ni el estilo LD: adáptate al stack real
+del proyecto. Si no hay `.ld/config.json` (instalación manual sin el instalador),
+decide por riesgo como siempre y no dependas de ese archivo.
 
 - **Rápido (vibe coding):** cambio acotado en una capa, sin contratos nuevos,
   sin escritura de datos ni seguridad. Se hace el cambio mínimo, se prueba y se
