@@ -14,9 +14,10 @@
 | Aceptación | entrada concreta y resultado comprobable |
 ```
 
-La fila "SP / datos" solo se llena **leyendo la definición**; si el SP no existe o no coincide, la historia
-incluye la tarea de crearlo. Si la feature no usa SQL Server, esa fila describe el almacén que use
-(por ejemplo, la estructura de carpetas en el sistema de archivos).
+La fila "SP / datos" solo se llena **leyendo la definición**; si la rutina no existe o no coincide, la historia
+incluye la tarea de crearlo. Si la feature no usa base de datos relacional —o usa PostgreSQL (por defecto) o SQL Server,
+según `.ld/config.json`—, esa fila describe el almacén y la rutina que correspondan (por ejemplo, la estructura de
+carpetas en el sistema de archivos; en PostgreSQL, la **función** `plpgsql` que arma la cadena delimitada).
 
 ## Tareas por historia y capa (`tasks.md`)
 

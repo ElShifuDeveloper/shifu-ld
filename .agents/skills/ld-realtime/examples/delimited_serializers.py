@@ -41,7 +41,7 @@ def registros_desde_delimitado(texto, sep_campo="|", sep_reg="¬", filas_meta=1)
             raise ValueError(f"fila {numero}: {len(campos)} campos, se esperaban {len(nombres)}")
         fila = {}
         for nombre, tipo, valor in zip(nombres, tipos, campos):
-            valor = unescape(valor, _ENTIDADES)  # el SP con FOR XML PATH('') entrega &amp; &lt; &gt;
+            valor = unescape(valor, _ENTIDADES)  # SQL Server: FOR XML PATH('') entrega &amp; &lt; &gt; (PostgreSQL usa string_agg, sin escape)
             conversor = _TIPOS_NUMERICOS.get(tipo)
             if conversor is not None and valor != "":
                 try:

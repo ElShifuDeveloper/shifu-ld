@@ -10,6 +10,11 @@ un objeto existente de esa base. Para versionar o desplegar en otro entorno usa
 `CREATE OR ALTER`, sin `USE` fijo (ejemplo en
 [sql/uspCubsoListarPaginaTipada.sql](../examples/sql/uspCubsoListarPaginaTipada.sql)).
 
+Todos los objetos analizados aquí son **T-SQL de SQL Server** (`dbo.`, `FOR XML PATH`, `ISNULL`,
+`@@IDENTITY`, `fnSplitString`, `TOP`). Para **PostgreSQL**, el mapeo T-SQL ↔ PL/pgSQL y el estilo
+equivalente están en [postgres.md](./postgres.md); la versión PL/pgSQL del ejemplo tipado está en
+[sql/pg/uspCubsoListarPaginaTipada.sql](../examples/sql/pg/uspCubsoListarPaginaTipada.sql).
+
 **Cobertura.** Los demos de `webpython` llaman a 23 procedimientos distintos y los
 23 tienen definición en `SPs`. Las otras 3 definiciones no las llama ningún demo:
 `uspCubsoListarPaginaTipada` (usada por el proveedor del paquete),

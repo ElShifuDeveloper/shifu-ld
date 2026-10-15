@@ -12,7 +12,20 @@ cursor.execute(
 rows = cursor.fetchall()
 ```
 
-La sintaxis de límite puede variar según SQL Server y el controlador; confirma que el servidor real la admita y usa un procedimiento almacenado si ese es el patrón del proyecto. Usa orden estable y una clave para paginación por cursor. No consultes todas las filas para luego paginar en JavaScript.
+En PostgreSQL el mismo keyset usa `LIMIT` y marcadores `%s` (nunca interpolando valores):
+
+```python
+cursor.execute(
+    "SELECT Id, Codigo, Descripcion FROM public.articulos WHERE Id > %s ORDER BY Id LIMIT %s",
+    (after_id, page_size),
+)
+rows = cursor.fetchall()
+```
+
+La sintaxis de límite depende del motor (SQL Server `TOP`/`OFFSET..FETCH`, PostgreSQL `LIMIT`/`OFFSET`);
+confirma que el servidor real la admita y usa una función/procedimiento almacenado si ese es el patrón
+del proyecto. Usa orden estable y una clave para paginación por cursor. No consultes todas las filas
+para luego paginar en JavaScript.
 
 Evita `fetchall()` o un DataFrame completo para volúmenes arbitrariamente grandes. Procesa con `fetchmany(batch_size)` o `cursor.fetchmany(...)`, devuelve páginas al punto de acceso o escribe a un flujo:
 
@@ -25,20 +38,25 @@ Ajusta el tamaño mediante mediciones; 10 000 filas es una decisión específica
 
 En los SP suministrados, `uspCubsoPaginarCsvPy` implementa `OFFSET/FETCH` con orden por `CubsoId`, mientras que `uspCubsoContar` entrega el total como texto. Al envolver un patrón así, valida página/tamaño positivos, aplica un máximo, detecta overflow del offset y decide si el total debe ser consistente con las filas bajo concurrencia. Para páginas profundas, evalúa cursor/keyset; no conviertas el índice de página en un cursor opaco sin cambiar el contrato SQL. El análisis enlazado contiene los hallazgos específicos de límites, orden y prefijo `;`.
 
-## `pyodbc` y transacciones
+## Driver y transacciones (SQL Server `pyodbc`, PostgreSQL `psycopg`)
 
-Usa parámetros posicionales de `pyodbc` y pasa valores como secuencia de un elemento: `(valor,)`. El módulo base construye llamadas `exec nombreSP @parametro=?`, pasa el valor como lista y valida el formato del nombre del procedimiento/parámetro; confirma igualmente que el nombre procede de código confiable o de una lista permitida, nunca de una entrada libre.
+Pasa los valores como parámetros posicionales del driver, en una secuencia de un elemento: `(valor,)`.
+El módulo base construye `exec nombreSP @parametro=?` (SQL Server) y el gemelo construye
+`SELECT funcion(%s)` (PostgreSQL); ambos validan el formato del nombre del procedimiento/función y del
+parámetro — confirma igualmente que el nombre procede de código confiable o de una lista permitida,
+nunca de una entrada libre.
 
 Ejemplo conceptual:
 
 ```python
-cursor.execute("EXEC dbo.BuscarOrden @Id = ?", (orden_id,))
+cursor.execute("EXEC dbo.BuscarOrden @Id = ?", (orden_id,))   # SQL Server (pyodbc)
+cursor.execute("SELECT buscar_orden(%s)", (orden_id,))        # PostgreSQL (psycopg)
 row = cursor.fetchone()
 ```
 
 Define quién administra `commit`/`rollback`, cierra el cursor y la conexión con `with`/`try/finally` según lo admita el controlador, y evita confirmar solo algunos caminos. No ocultes una excepción devolviendo un resultado con forma de éxito; comunica al servidor un error de dominio o de registro seguro.
 
-Revisa quién administra la transacción antes de activar `trx=True`: algunos SP, como `uspOrdenGrabarPyCsv`, abren y confirman su propia transacción. Evita reintentos automáticos de escrituras sin idempotencia: una pérdida de conexión después de `COMMIT` puede repetir la operación. Para transacciones en T-SQL, recomienda `SET XACT_ABORT ON` y `TRY/CATCH` con `rollback` y propagación de la excepción según la versión y el comportamiento requeridos; verifica además los identificadores con `SCOPE_IDENTITY()`/`OUTPUT INSERTED` en vez de `@@IDENTITY` cuando pueda haber desencadenadores.
+Revisa quién administra la transacción antes de activar `trx=True`: algunos SP, como `uspOrdenGrabarPyCsv`, abren y confirman su propia transacción. Evita reintentos automáticos de escrituras sin idempotencia: una pérdida de conexión después de `COMMIT` puede repetir la operación. Para transacciones en T-SQL, recomienda `SET XACT_ABORT ON` y `TRY/CATCH` con `rollback` y propagación de la excepción según la versión y el comportamiento requeridos; en PL/pgSQL usa `BEGIN … EXCEPTION WHEN OTHERS THEN … RAISE` y recuerda que **en PostgreSQL un error aborta la transacción** (haz `rollback()` antes de la siguiente sentencia). Recupera los identificadores con `SCOPE_IDENTITY()`/`OUTPUT INSERTED` (SQL Server) o `INSERT … RETURNING` (PostgreSQL) en vez de `@@IDENTITY` cuando pueda haber desencadenadores.
 
 ## DataFrame: usarlo con intención
 
@@ -46,7 +64,7 @@ Revisa quién administra la transacción antes de activar `trx=True`: algunos SP
 
 ```python
 df = pd.read_sql_query(
-    "SELECT Id, Precio FROM dbo.Articulos WHERE Id > ?",
+    "SELECT Id, Precio FROM dbo.Articulos WHERE Id > ?",   # en PostgreSQL: `%s`
     connection,
     params=[after_id],
 )

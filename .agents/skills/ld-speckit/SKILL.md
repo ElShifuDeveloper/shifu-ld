@@ -47,7 +47,7 @@ Adaptador entre Spec Kit y los skills LD. No reemplaza ni copia plantillas de Sp
 
 ## Checklist
 
-- ¿La constitución tiene los principios I–VIII, el nombre del proyecto y la línea de stack correcta (con o sin SQL Server)?
+- ¿La constitución tiene los principios I–VIII, el nombre del proyecto y la línea de stack correcta (según la base elegida: PostgreSQL, SQL Server o ninguna)?
 - ¿El plan usa el *Technical Context* LD y justifica cada desviación?
 - ¿Cada tarea tiene ruta de archivo, skill y, al final de cada historia, su recorrido de integración?
 - ¿Los datos viajan como cadenas y bytes, y las transferencias por viajes (`ld-transferencia`), sin JSON ni una petición por archivo?

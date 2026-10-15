@@ -1,6 +1,6 @@
 {
   "name": "shifu-ld",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "description": "Skills LD (metodología de Luis Dueñas Huaroto: cadenas delimitadas, bytes, bloques, lotes y empaquetado) para Django + JS nativo, con instalador y asistente de arranque para agentes.",
   "bin": {
     "shifu-ld": "bin/shifu-ld.js"

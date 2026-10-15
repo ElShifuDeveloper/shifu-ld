@@ -10,18 +10,22 @@ $ARGUMENTS
 
 ## Qué hacer
 
-1. Pregunta a la persona (si no vienen ya en `$ARGUMENTS`), con dos preguntas de opción:
+1. Pregunta a la persona (si no vienen ya en `$ARGUMENTS`), con preguntas de opción:
    - **Stack del proyecto:**
      1. Recomendado LD — Django + JS nativo + `General.js` + SPs (instala el kit base).
      2. Respetar el stack actual — solo copia los skills; no impone kit base ni estilo LD.
      3. Definirlo — pide una descripción (p. ej. «FastAPI + React»).
+   - **Base de datos:**
+     1. PostgreSQL 14+ con psycopg 3 (recomendado).
+     2. SQL Server con pyodbc.
+     3. Sin base de datos relacional.
    - **Modo de desarrollo:**
      1. SDD + Spec Kit (recomendado).
      2. Vibe coding.
 2. Ejecuta el instalador del paquete (no interactivo):
 
 ```sh
-python {{RUTA_PAQUETE}}/scripts/iniciar_proyecto.py <proyecto> --stack <ld|actual|definir> [--stack-detalle "<texto>"] --modo <sdd|vibe> --si
+python {{RUTA_PAQUETE}}/scripts/iniciar_proyecto.py <proyecto> --stack <ld|actual|definir> [--stack-detalle "<texto>"] --bd <postgres|sqlserver|ninguna> --modo <sdd|vibe> --si
 ```
 
 3. Reproduce el resumen del instalador. Si el modo es «sdd», el siguiente paso es

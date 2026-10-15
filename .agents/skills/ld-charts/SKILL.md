@@ -52,7 +52,7 @@ Ejemplos listos (con prueba en Node, `node test-lista-delimitada.js`):
 
 ## Problemas que los demos tienen y estos ejemplos evitan
 
-- **`&amp;` parte los registros.** Los SP que usan `FOR XML PATH('')` escapan `&`, `<` y `>`, y la entidad termina en `;`, el separador de registros: "Condimentos & Salsas" se lee como dos filas y la gráfica sale mal. `parseLista` decodifica el texto completo antes de separarlo; la solución de fondo es corregir el SP con `TYPE` y `.value()` (ver `ld-data`). En canvas, sin decodificar, se vería el texto `&amp;`.
+- **`&amp;` parte los registros (solo SQL Server).** Los SP que usan `FOR XML PATH('')` escapan `&`, `<` y `>`, y la entidad termina en `;`, el separador de registros: "Condimentos & Salsas" se lee como dos filas y la gráfica sale mal. `parseLista` decodifica el texto completo antes de separarlo; la solución de fondo es corregir el SP con `TYPE` y `.value()` (ver `ld-data`). En canvas, sin decodificar, se vería el texto `&amp;`.
 - **División por cero.** `escalaH = ancho / maxStock` da `Infinity`/`NaN` si todos los valores son 0 o no hay filas. Usa `escala()` y muestra "Sin datos".
 - **Desborde.** Los demos fijan 50 px por barra y 120 px por columna en un lienzo de 1000×600: más de ~10 categorías o ~8 columnas se salen del dibujo. Calcula el paso según la cantidad (`alturaFila`) o pagina.
 - **SVG armado con cadenas.** `html += "...data-nombre='" + nombre + "'"` y `svg.innerHTML = html` rompen el SVG con una comilla en el nombre y ejecutan código si el dato contiene marcado. Usa `createElementNS`, `setAttribute` y `textContent`.

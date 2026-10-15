@@ -36,10 +36,11 @@ def correr_error(args):
 
 
 class PruebasPuras(unittest.TestCase):
-    def test_stack_lines_tiene_dos_variantes(self):
-        con, sin = ip.leer_lineas_stack((ip.REFS / "stack-lines.md").read_text(encoding="utf-8"))
-        self.assertIn("pyodbc y SQL Server", con)
-        self.assertIn("sin base de datos", sin)
+    def test_stack_lines_tiene_una_por_motor(self):
+        lineas = ip.leer_lineas_stack((ip.REFS / "stack-lines.md").read_text(encoding="utf-8"))
+        self.assertIn("psycopg 3 y PostgreSQL 14+", lineas["Con PostgreSQL"])
+        self.assertIn("pyodbc y SQL Server", lineas["Con SQL Server"])
+        self.assertIn("sin base de datos", lineas["Sin base de datos relacional"])
 
     def test_render_constitucion_sin_marcadores_sobrantes(self):
         t = ip.render_constitucion((ip.REFS / "constitution.template.md").read_text(encoding="utf-8"),
@@ -117,7 +118,7 @@ class PruebasExtremoAExtremo(unittest.TestCase):
 
     def test_arranque_completo_con_speckit_ya_iniciado(self):
         self.preparar_speckit(PLANTILLA_VACIA)
-        rc, salida = correr([str(self.proy), "--si", "--sin-sql"])
+        rc, salida = correr([str(self.proy), "--si", "--bd", "sqlserver"])
         self.assertEqual(rc, 0)
         skills = sorted(p.name for p in (self.proy / ".agents" / "skills").iterdir())
         self.assertIn("ld-speckit", skills)
@@ -126,8 +127,8 @@ class PruebasExtremoAExtremo(unittest.TestCase):
         self.assertFalse(list((self.proy / ".agents").rglob("__pycache__")))
         const = (self.proy / ip.RUTA_CONSTITUCION).read_text(encoding="utf-8")
         self.assertIn("# mi_app Constitution", const)
-        self.assertIn("sin base de datos", const)
-        for d, _ in ip.archivos_kit():          # kit base: módulos, estilos e iconos reales de los proyectos LD
+        self.assertIn("pyodbc y SQL Server", const)
+        for d, _ in ip.archivos_kit("sqlserver"):   # kit base: módulos, estilos e iconos reales de los proyectos LD
             self.assertTrue((self.proy / d).is_file(), d)
         self.assertTrue((self.proy / "Static/styles/LD.css").is_file())
         self.assertTrue((self.proy / "Static/Images/Icons/Editar.png").is_file())
@@ -206,8 +207,38 @@ class PruebasExtremoAExtremo(unittest.TestCase):
         self.assertFalse((self.proy / ip.RUTA_DISENO).exists())
         cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
         self.assertEqual(cfg["stack"], "actual")
-        self.assertEqual(cfg["sql"], False)          # con stack no-LD no se impone SQL Server
+        self.assertEqual(cfg["bd"], "ninguna")       # con stack no-LD no se impone base relacional
         self.assertIn("no se instala el kit base", salida)
+
+    def test_bd_postgres_es_el_default_e_instala_el_gemelo(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        rc, _ = correr([str(self.proy), "--si"])
+        self.assertEqual(rc, 0)
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["bd"], "postgres")
+        self.assertEqual((self.proy / "Modulos" / "modAccesoDatos.py").read_bytes(),
+                         (ip.SKILLS_ORIGEN / "ld-data/examples/postgres/modAccesoDatos.py").read_bytes())
+        self.assertIn("PostgreSQL 14+", (self.proy / ip.RUTA_CONSTITUCION).read_text(encoding="utf-8"))
+
+    def test_bd_ninguna_no_instala_el_cliente(self):
+        self.preparar_speckit(PLANTILLA_VACIA)
+        correr([str(self.proy), "--si", "--bd", "ninguna"])
+        self.assertFalse((self.proy / "Modulos" / "modAccesoDatos.py").exists())
+        self.assertTrue((self.proy / "Modulos" / "modUtilidades.py").exists())
+
+    def test_migra_config_anterior_con_sql(self):
+        # una configuración de 2.9 (campo `sql`) no debe voltearse a PostgreSQL por el nuevo default
+        self.proy.mkdir(parents=True)
+        (self.proy / ".ld").mkdir()
+        (self.proy / ip.RUTA_CONFIG).write_text(
+            json.dumps({"stack": "ld", "stack_detalle": "", "modo": "sdd", "sql": True}), encoding="utf-8")
+        self.preparar_speckit(PLANTILLA_VACIA)
+        rc, _ = correr([str(self.proy), "--si"])
+        self.assertEqual(rc, 0)
+        cfg = json.loads((self.proy / ip.RUTA_CONFIG).read_text(encoding="utf-8"))
+        self.assertEqual(cfg["bd"], "sqlserver")
+        self.assertEqual((self.proy / "Modulos" / "modAccesoDatos.py").read_bytes(),
+                         (ip.SKILLS_ORIGEN / "ld-data/examples/base/modAccesoDatos.py").read_bytes())
 
     def test_modo_vibe_guarda_config_y_sugiere_prompts(self):
         rc, salida = correr([str(self.proy), "--si", "--sin-speckit", "--modo", "vibe"])

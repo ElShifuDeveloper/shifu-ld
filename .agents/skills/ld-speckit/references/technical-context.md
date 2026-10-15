@@ -8,8 +8,8 @@ Si un campo no existe en la plantilla, no lo inventes.
 | Campo | Valor por defecto LD |
 |---|---|
 | Lenguaje y versión | Python 3.12 con Django 5.2 en el servidor; JavaScript nativo (ES2017+) en el navegador, sin frameworks de frontend |
-| Dependencias principales | Django; `pyodbc` solo si hay datos relacionales en SQL Server; `websockets` >= 14 solo si hay tiempo real; sin librerías de frontend |
-| Almacenamiento | SQL Server mediante procedimientos almacenados y `clienteSQL` cuando haya datos relacionales; si la feature solo necesita otro almacén (por ejemplo, archivos en disco), indícalo y justifica en el *Constitution Check* por qué SQL Server no aplica. Rutas y credenciales desde `settings` o el entorno |
+| Dependencias principales | Django; `psycopg[binary] >= 3.2` si hay datos en PostgreSQL (por defecto) o `pyodbc` si es SQL Server (según `.ld/config.json`); `websockets` >= 14 solo si hay tiempo real; sin librerías de frontend |
+| Almacenamiento | La base elegida en `.ld/config.json` (`bd`): PostgreSQL 14+ (por defecto) mediante funciones almacenadas y `clienteSQL`, o SQL Server mediante procedimientos almacenados y `clienteSQL`, cuando haya datos relacionales. Si la feature solo necesita otro almacén (por ejemplo, archivos en disco), indícalo y justifica en el *Constitution Check* por qué la base relacional no aplica. Rutas y credenciales desde `settings` o el entorno |
 | Pruebas | `python manage.py test`; `unittest` para funciones puras; `node` para utilidades JavaScript; pruebas de navegador registradas en `quickstart.md` |
 | Plataforma | Navegador moderno de escritorio y móvil; servidor Windows o Linux detrás de un proxy con HTTPS |
 | Tipo de proyecto | Aplicación web Django con una app por función (`views.py`, `urls.py`, HTML y JavaScript) |

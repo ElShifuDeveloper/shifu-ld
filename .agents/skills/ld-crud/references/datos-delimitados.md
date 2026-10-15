@@ -56,5 +56,5 @@ Detalles que condicionan el código:
 
 - El orden de los controles con clase `M` del formulario debe ser exactamente el orden de los 6 campos.
 - Grabar y Eliminar necesitan `trx=True`: el SP no abre transacción y el wrapper solo hace commit con ese indicador.
-- Riesgos de los SP que afectan a la pantalla (texto escapado `&amp;` por `FOR XML PATH`, filas con `NULL` que desaparecen de la grilla, uniones internas que ocultan productos, `Eliminar3` que falla por clave foránea o responde igual si el id no existe): ver la sección 7 del [análisis](../../ld-data/references/stored-procedures-review.md) y muéstralos al usuario cuando apliquen.
+- Riesgos de los SP que afectan a la pantalla (texto escapado `&amp;` por `FOR XML PATH` —solo SQL Server; en PostgreSQL `string_agg` no escapa—, filas con `NULL` que desaparecen de la grilla, uniones internas que ocultan productos, `Eliminar3` que falla por clave foránea o responde igual si el id no existe): ver la sección 7 del [análisis](../../ld-data/references/stored-procedures-review.md) y muéstralos al usuario cuando apliquen.
 - Las vistas devuelven 500 cuando `clienteSQL` devuelve `None` (fallo del SP); el JS lo detecta con `rptaHttp.ok`.

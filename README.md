@@ -56,11 +56,12 @@ También, desde una copia local del paquete:
 python <ruta-al-paquete>/scripts/iniciar_proyecto.py <ruta-del-proyecto>
 ```
 
-El instalador es un **asistente de dos preguntas** y recuerda la elección:
+El instalador es un **asistente de tres preguntas** y recuerda la elección:
 
 1. **Stack:** 1) recomendado LD — Django + JS nativo + `General.js` + SPs (instala el kit base);
    2) respetar el stack actual — solo copia los skills; 3) definirlo.
-2. **Modo de desarrollo:** 1) SDD + Spec Kit (recomendado); 2) Vibe coding.
+2. **Base de datos:** 1) PostgreSQL 14+ con psycopg 3 (recomendado); 2) SQL Server con pyodbc; 3) ninguna.
+3. **Modo de desarrollo:** 1) SDD + Spec Kit (recomendado); 2) Vibe coding.
 
 La respuesta queda en `.ld/config.json` y los skills la respetan. Después:
 
@@ -68,7 +69,7 @@ La respuesta queda en `.ld/config.json` y los skills la respetan. Después:
 - **Vibe coding**: pide en lenguaje natural (el instalador imprime prompts de ejemplo); no hace falta `/speckit.*`.
 
 Dentro de OpenCode, el mismo asistente está en el comando **`/shifu.iniciar`**. Con `--si` no pregunta
-nada (usa `ld` + `sdd`). Detalle y opciones: [instalacion.md](.agents/skills/ld-speckit/references/instalacion.md).
+nada (usa `ld` + `postgres` + `sdd`). Detalle y opciones: [instalacion.md](.agents/skills/ld-speckit/references/instalacion.md).
 
 ## Versiones y actualización
 

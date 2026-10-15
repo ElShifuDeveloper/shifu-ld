@@ -42,8 +42,8 @@ RUTA_CONSTITUCION = ".specify/memory/constitution.md"
 RUTA_DISENO = ".ld/diseno.json"   # {"modo": "ld"} o {"modo": "externo", "skill": "<nombre>"}; --update no lo toca
 IGNORAR = {"__pycache__", ".DS_Store"}
 # Kit base del estilo LD: archivo en el proyecto -> fuente dentro de los skills (cada skill es dueño de los suyos)
+# El cliente de datos (Modulos/modAccesoDatos.py) se agrega aparte según el motor: ver FUENTE_CLIENTE.
 KIT = {
-    "Modulos/modAccesoDatos.py": "ld-data/examples/base/modAccesoDatos.py",
     "Modulos/modUtilidades.py": "ld-data/examples/base/modUtilidades.py",
     "Modulos/modSeguridadWeb.py": "ld-security-session/examples/modSeguridadWeb.py",
     "Modulos/modGraficos.py": "ld-security-session/examples/modGraficos.py",
@@ -55,6 +55,14 @@ KIT = {
     "Static/styles/DACP.css": "ld-design/examples/DACP.css",      # estilo original, para pantallas de los demos
     "Static/Images/Icons": "ld-design/examples/Images/Icons",     # iconos PNG que usa Gui.Grilla (carpeta completa)
 }
+FUENTE_CLIENTE = {                       # cliente de datos por motor de base de datos
+    "postgres": "ld-data/examples/postgres/modAccesoDatos.py",
+    "sqlserver": "ld-data/examples/base/modAccesoDatos.py",
+}
+BD_ENGINES = ("postgres", "sqlserver", "ninguna")   # postgres: psycopg 3 (recomendado); sqlserver: pyodbc; ninguna: sin base relacional
+BD_LINEA = {"postgres": "Con PostgreSQL", "sqlserver": "Con SQL Server", "ninguna": "Sin base de datos relacional"}
+BD_ETIQUETA = {"postgres": "PostgreSQL", "sqlserver": "SQL Server", "ninguna": "sin base de datos relacional"}
+LINEAS_STACK = tuple(BD_LINEA[bd] for bd in ("postgres", "sqlserver", "ninguna"))
 OBSOLETOS = {"ld-crud-legacy": "ld-crud"}   # skill retirado -> reemplazo
 MANIFIESTO = ".ld/manifest.json"
 RUTA_CONFIG = ".ld/config.json"   # {"stack": ..., "stack_detalle": ..., "modo": "sdd|vibe", "sql": bool}; --update no lo toca
@@ -75,9 +83,15 @@ MARCA_TIEMPOS_FIN = "# LD:tiempos:fin"
 
 
 # ---------------------------------------------------------------- funciones puras
-def archivos_kit():
-    """Lista de (ruta_en_proyecto, ruta_fuente) del kit base; las carpetas se expanden archivo por archivo."""
+def archivos_kit(bd="sqlserver"):
+    """Lista de (ruta_en_proyecto, ruta_fuente) del kit base; las carpetas se expanden archivo por archivo.
+
+    El cliente de datos depende del motor (`bd`): `postgres` copia el gemelo psycopg 3, `sqlserver`
+    el cliente de los demos, `ninguna` no copia ningún cliente.
+    """
     pares = []
+    if bd in FUENTE_CLIENTE:
+        pares.append(("Modulos/modAccesoDatos.py", SKILLS_ORIGEN / FUENTE_CLIENTE[bd]))
     for destino, fuente in KIT.items():
         origen = SKILLS_ORIGEN / fuente
         if origen.is_dir():
@@ -88,12 +102,13 @@ def archivos_kit():
 
 
 def leer_lineas_stack(texto):
-    """Devuelve (con_sql, sin_sql): el contenido de los bloques de código de stack-lines.md."""
-    bloques = re.findall(r"^## (Con SQL Server|Sin SQL Server)\s*\n\s*```\n(.*?)\n```", texto, re.S | re.M)
+    """{título: contenido del bloque de código} de las líneas de stack (una por motor de base de datos)."""
+    bloques = re.findall(r"^## (.+?)\s*\n\s*```\n(.*?)\n```", texto, re.S | re.M)
     d = {titulo: cuerpo for titulo, cuerpo in bloques}
-    if set(d) != {"Con SQL Server", "Sin SQL Server"}:
-        raise ValueError("stack-lines.md no tiene los dos bloques esperados")
-    return d["Con SQL Server"], d["Sin SQL Server"]
+    faltan = [t for t in LINEAS_STACK if t not in d]
+    if faltan:
+        raise ValueError("stack-lines.md no tiene las líneas esperadas: faltan " + ", ".join(faltan))
+    return d
 
 
 def render_constitucion(plantilla, nombre, fecha, linea_stack, origen):
@@ -214,8 +229,11 @@ def entradas_changelog(texto, desde):
     return entradas
 
 
-def archivos_paquete(incluir_skills=True, incluir_kit=True):
-    """{ruta_en_proyecto: ruta_fuente} de todos los archivos que el paquete instala (skills y kit base)."""
+def archivos_paquete(incluir_skills=True, incluir_kit=True, bd="sqlserver"):
+    """{ruta_en_proyecto: ruta_fuente} de todos los archivos que el paquete instala (skills y kit base).
+
+    `bd` decide qué cliente de datos entra en el kit (postgres/sqlserver/ninguna).
+    """
     d = {}
     if incluir_skills:
         for skill in sorted(SKILLS_ORIGEN.iterdir()):
@@ -225,7 +243,7 @@ def archivos_paquete(incluir_skills=True, incluir_kit=True):
                     if p.is_file() and not (set(rel.parts) & IGNORAR) and p.suffix != ".pyc":
                         d[".agents/skills/" + rel.as_posix()] = p
     if incluir_kit:
-        d.update(dict(archivos_kit()))
+        d.update(dict(archivos_kit(bd)))
     return d
 
 
@@ -599,6 +617,16 @@ def validar_modo(modo):
     return {"modo": modo}, None
 
 
+def leer_bd(proy):
+    """Motor de base de datos del proyecto: campo `bd` o, en configuraciones anteriores, el booleano `sql`."""
+    cfg = leer_config(proy) or {}
+    if cfg.get("bd") in BD_ENGINES:
+        return cfg["bd"]
+    if "sql" in cfg:
+        return "sqlserver" if cfg.get("sql") else "ninguna"
+    return "sqlserver"
+
+
 # ---------------------------------------------------------------- interacción
 def preguntar(texto, defecto, interactivo):
     if not interactivo:
@@ -637,7 +665,7 @@ def informe_version(proy):
     instalada = man.get("version") if man else None
     lineas = [f"versión instalada: {instalada or 'sin manifiesto (instalación anterior al versionado)'} | disponible: {disponible}"]
     registro = (man or {}).get("archivos", {})
-    cont, det, _ = sincronizar(proy, archivos_paquete(), registro, "instalar", True, (True, True))
+    cont, det, _ = sincronizar(proy, archivos_paquete(bd=leer_bd(proy)), registro, "instalar", True, (True, True))
     lineas += resumen_sincronizacion(cont, det, "version")
     viejas = contar_old(proy)
     if viejas:
@@ -645,7 +673,7 @@ def informe_version(proy):
     cfg = leer_config(proy)
     if cfg:
         stack_txt = cfg["stack"] if cfg["stack"] != "definir" else f"definir ({cfg.get('stack_detalle')})"
-        lineas.append(f"modo de desarrollo: {cfg['modo']} | stack: {stack_txt} | SQL: {'sí' if cfg.get('sql') else 'no'}")
+        lineas.append(f"modo de desarrollo: {cfg['modo']} | stack: {stack_txt} | base de datos: {BD_ETIQUETA[leer_bd(proy)]}")
     pendientes = (cont["por_actualizar"] + cont["modificados"] + cont["sin_registro"] + cont["retirables"] + cont["instalados"])
     ch = RAIZ / "CHANGELOG.md"
     if ch.exists():
@@ -693,9 +721,11 @@ def main(argv=None, ejecutar_comando=subprocess.run):
                     help="borra las versiones *-old del proyecto (skills, kit base y raíz) y termina; con --dry-run solo las lista")
     ap.add_argument("--sin-speckit", action="store_true", help="no ejecutes `specify init`")
     ap.add_argument("--sin-base", action="store_true", help="no instales el kit base (Modulos/ y Static/)")
+    ap.add_argument("--bd", choices=list(BD_ENGINES),
+                    help="base de datos: «postgres» (por defecto, recomendado), «sqlserver» o «ninguna»; se guarda en .ld/config.json")
     g = ap.add_mutually_exclusive_group()
-    g.add_argument("--con-sql", dest="sql", action="store_true", default=None)
-    g.add_argument("--sin-sql", dest="sql", action="store_false")
+    g.add_argument("--con-sql", dest="bd_alias", action="store_const", const="sqlserver", help="alias de --bd sqlserver")
+    g.add_argument("--sin-sql", dest="bd_alias", action="store_const", const="ninguna", help="alias de --bd ninguna")
     ap.add_argument("--diseno", choices=["ld", "externo"], help="estilo visual: «ld» (Soft Glass del paquete, sin librerías) o «externo» (otro skill de diseño); se guarda en .ld/diseno.json")
     ap.add_argument("--skill-diseno", help="nombre del skill de diseño externo (con --diseno externo)")
     ap.add_argument("--stack", choices=list(STACKS),
@@ -765,15 +795,23 @@ def main(argv=None, ejecutar_comando=subprocess.run):
         print(f"ERROR: {error_m}", file=sys.stderr)
         return 2
     stack, stack_detalle, modo_desarrollo = cfg_stack["stack"], cfg_stack["stack_detalle"], cfg_modo["modo"]
-    usa_sql = a.sql if a.sql is not None else (stack == "ld")
-    nuevo_config = {"stack": stack, "stack_detalle": stack_detalle, "modo": modo_desarrollo, "sql": bool(usa_sql)}
+    bd = a.bd or a.bd_alias or (config_actual or {}).get("bd")
+    if bd is None and config_actual and "sql" in config_actual:
+        bd = "sqlserver" if config_actual.get("sql") else "ninguna"   # migración de configuraciones anteriores (campo `sql`)
+    if bd is None:
+        bd = preguntar_opcion("Base de datos", [
+            ("postgres", "PostgreSQL 14+ con psycopg 3 (recomendado)"),
+            ("sqlserver", "SQL Server con pyodbc"),
+            ("ninguna", "sin base de datos relacional"),
+        ], "postgres" if stack == "ld" else "ninguna", interactivo)
+    nuevo_config = {"stack": stack, "stack_detalle": stack_detalle, "bd": bd, "modo": modo_desarrollo}
     if not (config_actual and all(config_actual.get(k) == v for k, v in nuevo_config.items())):
         def escribir_config():
             ruta = proy / RUTA_CONFIG
             ruta.parent.mkdir(parents=True, exist_ok=True)
             ruta.write_text(json.dumps(nuevo_config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         etiqueta = "estilo LD" if stack == "ld" else (f"stack «{stack_detalle}»" if stack == "definir" else "stack actual")
-        hacer(f"guardar {etiqueta} y modo {modo_desarrollo} en {RUTA_CONFIG}", escribir_config)
+        hacer(f"guardar {etiqueta}, base {BD_ETIQUETA[bd]} y modo {modo_desarrollo} en {RUTA_CONFIG}", escribir_config)
     if stack != "ld":
         log.append(f"stack {stack}: no se instala el kit base (Modulos/ y Static/); solo se copian los skills y el agente se adapta al proyecto")
 
@@ -805,7 +843,7 @@ def main(argv=None, ejecutar_comando=subprocess.run):
                         hacer(f"apartar el skill obsoleto {viejo} (lo reemplaza {reemplazo}); queda como {viejo}-old", retirar)
                         for k in [k for k in registro if k.startswith(f".agents/skills/{viejo}/")]:
                             registro.pop(k)
-        paquete = archivos_paquete(en_proyecto, incluir_kit)
+        paquete = archivos_paquete(en_proyecto, incluir_kit, bd)
         cont, det, registro = sincronizar(proy, paquete, registro, modo, seco, (en_proyecto, incluir_kit))
         for linea in resumen_sincronizacion(cont, det, modo):
             log.append(("[simulación] " if seco and not linea.startswith(("AVISO", "    ")) else "") + linea)
@@ -908,15 +946,15 @@ def main(argv=None, ejecutar_comando=subprocess.run):
             log.append("constitución: ya existe" + (" (LD)" if es_constitucion_ld(texto_const) else " y no es la de LD") +
                        "; no se toca. Para enmendarla: /speckit.constitution Usa el skill ld-speckit y su plantilla de constitución")
         else:
-            con, sin = leer_lineas_stack((REFS / "stack-lines.md").read_text(encoding="utf-8"))
+            lineas_stack = leer_lineas_stack((REFS / "stack-lines.md").read_text(encoding="utf-8"))
             plantilla = (REFS / "constitution.template.md").read_text(encoding="utf-8")
-            nuevo = render_constitucion(plantilla, nombre, datetime.date.today().isoformat(), con if usa_sql else sin, "generada por iniciar_proyecto.py")
+            nuevo = render_constitucion(plantilla, nombre, datetime.date.today().isoformat(), lineas_stack[BD_LINEA[bd]], "generada por iniciar_proyecto.py")
 
             def escribir_const():
                 ruta_const.parent.mkdir(parents=True, exist_ok=True)
                 ruta_const.write_text(nuevo, encoding="utf-8")
                 manifiesto["constitucion"] = {"plantilla_sha256": sha(REFS / "constitution.template.md")}
-            hacer(f"generar la constitución de «{nombre}» ({'con' if usa_sql else 'sin'} SQL Server) en {RUTA_CONSTITUCION}", escribir_const)
+            hacer(f"generar la constitución de «{nombre}» (base: {BD_ETIQUETA[bd]}) en {RUTA_CONSTITUCION}", escribir_const)
             const_lista = True
 
     # 5) opencode.json

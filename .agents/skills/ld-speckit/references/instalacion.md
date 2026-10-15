@@ -8,7 +8,7 @@ Desde cualquier lugar (ruta del paquete Skill_LD y ruta del proyecto):
 python <paquete>/scripts/iniciar_proyecto.py <ruta-del-proyecto>
 ```
 
-Si el proyecto no existe, lo crea. Pide (o toma de `--nombre`) el nombre del proyecto y si usará SQL Server.
+Si el proyecto no existe, lo crea. Pregunta (o toma de las banderas `--nombre`, `--stack`, `--bd` y `--modo`) el nombre del proyecto, el **stack**, la **base de datos** (PostgreSQL por defecto, o SQL Server, o ninguna) y el **modo de desarrollo** (SDD o vibe); guarda stack, base y modo en `<proyecto>/.ld/config.json`.
 Es idempotente: puedes repetirlo y no sobrescribe nada que ya exista sin avisar. Hace, en orden:
 
 1. **Skills LD:** copia las carpetas `ld-*` a `<proyecto>/.agents/skills/`. Si ya existen y son idénticas, no hace
@@ -16,9 +16,10 @@ Es idempotente: puedes repetirlo y no sobrescribe nada que ya exista sin avisar.
    vez en `~/.agents/skills/` (valen para todos tus proyectos) y con `--skills omitir` no las toca. Si encuentra un skill
    obsoleto (`ld-crud-legacy`, ahora `ld-crud`) lo avisa y, con `--update`, lo aparta como `ld-crud-legacy-old` para no duplicar.
 2. **Kit base del estilo LD:** instala los archivos que el estilo da por supuestos, solo si faltan (nunca sobrescribe):
-   `Modulos/` (`modAccesoDatos.py`, `modUtilidades.py`, `modSeguridadWeb.py`, `modGraficos.py`, `modPaquetes.py`) y `Static/`
+   `Modulos/` (`modAccesoDatos.py` —el cliente que corresponde a `--bd`—, `modUtilidades.py`, `modSeguridadWeb.py`, `modGraficos.py`, `modPaquetes.py`) y `Static/`
    (`scripts/General.js`, `scripts/Paquetes.js`, `scripts/sha256.js`, `styles/LD.css`, `styles/DACP.css`) y `Static/Images/Icons/`. La tabla de fuentes está en
-   [ld-crud](../../ld-crud/SKILL.md). Con `--sin-base` no los instala.
+   [ld-crud](../../ld-crud/SKILL.md). Con `--sin-base` no los instala. Con `--bd postgres` (por defecto) el cliente es
+   [postgres/modAccesoDatos.py](../../ld-data/examples/postgres/modAccesoDatos.py) (psycopg 3); con `--bd sqlserver`, el de SQL Server; con `--bd ninguna`, no copia cliente.
 2b. **Estilo visual:** pregunta una vez (o toma `--diseno ld|externo` y `--skill-diseno <nombre>`) si el proyecto usa el diseño LD (Soft Glass,
    sin librerías) o un skill de diseño externo (por ejemplo con Tailwind) y lo guarda en `<proyecto>/.ld/diseno.json`. Sin terminal
    interactiva (por ejemplo, si lo ejecuta un agente) usa `ld` y lo avisa en la salida: pregunta tú a la persona y repite con las banderas.

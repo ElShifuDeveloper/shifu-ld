@@ -245,7 +245,8 @@ activación automática y completar un recorrido MVP elegido con el usuario.
 **Criterios de aprobación**
 
 - Usa `scripts/iniciar_proyecto.py` (con `--dry-run` primero si hay dudas) en lugar de crear
-  los archivos a mano, y pregunta solo el nombre del proyecto y si usará SQL Server.
+  los archivos a mano, y pregunta el nombre del proyecto, el stack, la base de datos (PostgreSQL por
+  defecto) y el modo de desarrollo.
 - Deja instalados los skills, `.specify/`, el bloque LD en `AGENTS.md`, la constitución con el
   nombre del proyecto y `opencode.json`.
 - No sobrescribe una constitución ni un `AGENTS.md` existentes sin avisar, y no ejecuta

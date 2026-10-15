@@ -1,6 +1,6 @@
 ---
 name: ld-data
-description: "Implementa la capa de datos para consultas paginadas, catálogo de archivos, CSV/texto por flujo y cargas mixtas: SQL Server/pyodbc, procedimientos, cursores, pandas, transacciones, codificación e idempotencia."
+description: "Implementa la capa de datos para consultas paginadas, catálogo de archivos, CSV/texto por flujo y cargas mixtas: SQL Server/pyodbc o PostgreSQL/psycopg 3, procedimientos y funciones, cursores, pandas, transacciones, codificación e idempotencia."
 ---
 
 # LD_data
@@ -13,6 +13,7 @@ Diseña la capa que consulta y persiste datos para `ld-frontend` y `ld-backend`.
 
 | Tarea | Lee |
 |---|---|
+| Elegir el motor (PostgreSQL por defecto o SQL Server) y mapear entre ambos | [postgres.md](./references/postgres.md) |
 | Elegir `EjecutarComandoCadena`/`Fila`/`InsertMasivo…`, errores, `NULL` | [cliente-sql.md](./references/cliente-sql.md) |
 | Saber qué devuelve un SP existente o revisar su riesgo | [stored-procedures-review.md](./references/stored-procedures-review.md) (26 SP) |
 | Conectar una consulta a la fuente real, crear un SP nuevo, paginar por clave | [sql-sources.md](./references/sql-sources.md) |
@@ -22,7 +23,7 @@ Diseña la capa que consulta y persiste datos para `ld-frontend` y `ld-backend`.
 
 ## Ejemplos
 
-Base: [base/modAccesoDatos.py](./examples/base/modAccesoDatos.py) y [base/modUtilidades.py](./examples/base/modUtilidades.py) son los módulos reales de los proyectos LD (`clienteSQL`, `beLog`, `Log`, `Seguridad`, `Generador`, `JSON`, `XML`); se copian a `Modulos/`. Variante opcional con reintentos y errores por excepción: [mejorado/modAccesoDatos.py](./examples/mejorado/modAccesoDatos.py). Código adaptable: [pyodbc_access.py](./examples/pyodbc_access.py), [csv_bulk_import.py](./examples/csv_bulk_import.py), [csv_upload_handler.py](./examples/csv_upload_handler.py) y [sql/uspCubsoListarPaginaTipada.sql](./examples/sql/uspCubsoListarPaginaTipada.sql). Requieren adaptar procedimientos, SQL, validación de dominio y conexión al proyecto destino.
+Base: [base/modAccesoDatos.py](./examples/base/modAccesoDatos.py) y [base/modUtilidades.py](./examples/base/modUtilidades.py) son los módulos reales de los proyectos LD (`clienteSQL`, `beLog`, `Log`, `Seguridad`, `Generador`, `JSON`, `XML`); se copian a `Modulos/`. **Gemelo PostgreSQL con la misma API:** [postgres/modAccesoDatos.py](./examples/postgres/modAccesoDatos.py) (`iniciar_proyecto.py --bd postgres` lo copia a `Modulos/modAccesoDatos.py`). Variante opcional con reintentos y errores por excepción: [mejorado/modAccesoDatos.py](./examples/mejorado/modAccesoDatos.py). Código adaptable: [pyodbc_access.py](./examples/pyodbc_access.py), [postgres/psycopg_access.py](./examples/postgres/psycopg_access.py), [csv_bulk_import.py](./examples/csv_bulk_import.py), [csv_upload_handler.py](./examples/csv_upload_handler.py), [sql/uspCubsoListarPaginaTipada.sql](./examples/sql/uspCubsoListarPaginaTipada.sql) y su versión PL/pgSQL [sql/pg/uspCubsoListarPaginaTipada.sql](./examples/sql/pg/uspCubsoListarPaginaTipada.sql). Requieren adaptar procedimientos, SQL, validación de dominio y conexión al proyecto destino.
 
 ## Procedimiento
 
@@ -31,7 +32,7 @@ Base: [base/modAccesoDatos.py](./examples/base/modAccesoDatos.py) y [base/modUti
 3. **Decide en este orden**: reutilizar la fuente si ya cumple; adaptar sin alterar SQL si el contrato es inequívoco; crear un SP **nuevo e independiente** si no cumple; modificar uno existente solo con autorización explícita para ese objeto. "Conectar", "adaptar" o "hacer compatible" no son esa autorización.
 4. **Elige el método según la forma del SP**: escalar o lista delimitada (`EjecutarComandoCadena`), fila (`EjecutarComandoFila`), bloque para insertar (`EjecutarInsertMasivoCsv`) o bytes desde el disco.
 5. **Consulta solo lo necesario**: pagina en el origen con orden estable y clave de continuación; nunca descargues todo para paginar en JavaScript.
-6. **Escribe con cuidado**: define quién administra `commit`/`rollback` (`trx=True` frente a un SP que abre su propia transacción), no reintentes escrituras sin idempotencia y prefiere `SCOPE_IDENTITY()`/`OUTPUT` a `@@IDENTITY`.
+6. **Escribe con cuidado**: define quién administra `commit`/`rollback` (`trx=True` frente a una rutina que abre su propia transacción), no reintentes escrituras sin idempotencia y recupera la identidad con `SCOPE_IDENTITY()`/`OUTPUT` (SQL Server) o `INSERT … RETURNING` (PostgreSQL), nunca con `@@IDENTITY`.
 7. **Prueba** cero filas, primera y última página, `NULL`, Unicode, orden estable, cursores inválidos, lotes parciales y rollback.
 
 ## Reglas que no cambian
@@ -45,6 +46,7 @@ Base: [base/modAccesoDatos.py](./examples/base/modAccesoDatos.py) y [base/modUti
 ## Checklist
 
 - ¿Se verificó la definición real del SP y su forma de retorno?
+- ¿Se respetó el motor real (PostgreSQL ≥ 14 con psycopg 3, o SQL Server con pyodbc) en el driver, los marcadores (`%s`/`?`) y la forma de paginar e identificar?
 - ¿Se reutilizó la fuente existente o se creó un SP nuevo, sin tocar uno existente sin permiso?
 - ¿La paginación es por clave, con orden estable y tamaño máximo?
 - ¿Los `NULL`, las fechas y el Unicode se serializan de forma explícita?

@@ -4,6 +4,29 @@ Formato: `## [versión] - fecha`, con **Cambios** y **Migración** (acciones man
 Versionado semántico: MAJOR si cambia la forma de trabajar o se retira algo; MINOR si se añade capacidad compatible; PATCH si solo
 se corrige o se aclara. El script `scripts/iniciar_proyecto.py --version` muestra lo que cambió desde la versión instalada.
 
+## [2.10.0] - 2026-10-15
+
+- **PostgreSQL como base de datos soportada (y nuevo default).** Se añade el gemelo
+  `ld-data/examples/postgres/modAccesoDatos.py` (psycopg 3, **misma API** `clienteSQL`, para que las
+  vistas no cambien), la referencia única [postgres.md](.agents/skills/ld-data/references/postgres.md)
+  con el mapeo T-SQL ↔ PL/pgSQL, la función PL/pgSQL `sql/pg/uspCubsoListarPaginaTipada.sql`,
+  `postgres/psycopg_access.py` y la fábrica `ld-backend/examples/pg_records_connection.py`. Requiere
+  **PostgreSQL 14+** y `psycopg[binary] >= 3.2`.
+- **El setup pregunta la base de datos** (`--bd {postgres,sqlserver,ninguna}`), con **PostgreSQL
+  recomendado por defecto**, y la guarda en `.ld/config.json`. `--con-sql`/`--sin-sql` quedan como alias.
+  `stack-lines.md` pasa a tres líneas (PostgreSQL / SQL Server / sin base relacional) y el instalador
+  elige el cliente de `Modulos/modAccesoDatos.py` según el motor.
+- Los skills leen el motor elegido: `ld-data`, `ld-backend`, `ld-crud`, `ld-charts`, `ld-realtime`, `ld-speckit`.
+- Pruebas: `ld-data/examples/postgres/test_modAccesoDatosPg.py` (lógica pura; integración con
+  `LD_TEST_PG_DSN`) y `test_iniciar_proyecto.py` (+4 casos de base de datos y migración).
+
+### Migración
+- Las instalaciones existentes **no se voltean**: si `.ld/config.json` tiene el campo antiguo `sql`, se
+  deriva `bd = sqlserver|ninguna`; solo las instalaciones nuevas usan PostgreSQL por defecto. Para
+  cambiar de motor: `iniciar_proyecto.py <proyecto> --bd <postgres|sqlserver|ninguna> --update`.
+- Con PostgreSQL, instala la dependencia `psycopg[binary] >= 3.2`; el cliente de `Modulos/modAccesoDatos.py`
+  pasa a ser el gemelo. El formato LD (cadenas delimitadas y bytes) no cambia.
+
 ## [2.9.0] - 2026-10-14
 
 - **Instalador distribuible (`npx`) y asistente de arranque.** El paquete se puede ejecutar directo

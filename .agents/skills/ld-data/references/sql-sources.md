@@ -25,7 +25,10 @@ Decide en este orden:
    contrato, como paginar establemente columnas tipadas o devolver el cursor
    siguiente. Si el punto de partida es un SP existente, crea una copia
    independiente con nombre nuevo y reformúlala para el contrato requerido;
-   conserva intacto el objeto original y sus consumidores.
+   conserva intacto el objeto original y sus consumidores. En PostgreSQL la
+   rutina es una **función** (`LANGUAGE plpgsql`, `RETURNS text`) que arma la
+   misma cadena delimitada; el mapeo T-SQL ↔ PL/pgSQL está en
+   [postgres.md](./postgres.md).
 4. **Modificar el SP existente solo si el usuario lo solicita de forma
    explícita**, identificando el objeto y el cambio autorizado. No interpretes
    “conectar”, “adaptar” o “hacer compatible” como permiso para alterar el
@@ -68,4 +71,4 @@ LD_RECORD_PAGE_PROVIDER = "miapp.cubso_records_provider.page_cubso_records"
 LD_RECORDS_CONNECTION_FACTORY = "miapp.cubso_records_connection.open_records_connection"
 ```
 
-La fábrica de ejemplo lee `LD_RECORDS_ODBC_CONNECTION_STRING` del entorno; configúrala en el gestor de secretos del despliegue, nunca en `settings.py` versionado. No reutilices un alias Django que apunte a SQLite u otra base distinta: la conexión debe apuntar a la base del proyecto anfitrión. Revisa el script y despliégalo en cada entorno mediante su propio proceso de cambios y con autorización explícita.
+La fábrica de ejemplo lee `LD_RECORDS_ODBC_CONNECTION_STRING` del entorno; configúrala en el gestor de secretos del despliegue, nunca en `settings.py` versionado. Para PostgreSQL, la fábrica gemela es [pg_records_connection.py](../../ld-backend/examples/pg_records_connection.py), que lee `LD_RECORDS_PG_DSN`. No reutilices un alias Django que apunte a SQLite u otra base distinta: la conexión debe apuntar a la base del proyecto anfitrión. Revisa el script y despliégalo en cada entorno mediante su propio proceso de cambios y con autorización explícita.

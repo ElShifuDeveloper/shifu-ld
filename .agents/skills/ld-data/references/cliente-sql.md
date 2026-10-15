@@ -51,3 +51,19 @@ adoptarla; los ejemplos de este paquete se escriben contra el cliente de los dem
 Aplica la regla de dominio a `NULL` en el SP o en la vista: en existencias, `NULL` significa stock cero (el SP usa
 `ISNULL(UnitsInStock, 0)`); una fila ausente es `404`; un fallo de base de datos es `5xx`. Los datos delimitados no
 se escapan: ningún valor puede contener `¬`, `|`, `;` ni `_` (ver [stored-procedures-review.md](./stored-procedures-review.md)).
+
+## Variante PostgreSQL (psycopg 3)
+
+`postgres/modAccesoDatos.py` es el **gemelo** del cliente para PostgreSQL: **misma clase y mismos
+métodos**, así que las vistas no cambian. Cambian el driver y algunos detalles del contrato:
+
+- marcadores `%s` y llamada `SELECT funcion(%s)` (o `CALL procedimiento(%s)`), no `exec SP @p=?`;
+- `fetchval` no existe: el gemelo lee el escalar con `fetchone()[0]`;
+- `EjecutarComandoListas` y `EjecutarComandoVariosDF` **no se implementan**: PostgreSQL no devuelve
+  varios conjuntos en una llamada (no hay `nextset`); usa una llamada por conjunto o una sola cadena
+  con secciones unidas por `_`;
+- la conexión sale del mismo archivo `clave=valor`, armando un DSN (claves `servidor`, `puerto` opcional,
+  `basedatos`, `usuario`, `clave`, `sslmode` opcional).
+
+El formato LD (cadenas delimitadas), el contrato `None`/`""` y los métodos de inserción masiva y
+validación son idénticos. El mapeo completo de SQL está en [postgres.md](./postgres.md).

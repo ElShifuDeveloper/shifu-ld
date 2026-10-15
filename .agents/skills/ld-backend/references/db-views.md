@@ -16,6 +16,10 @@ El archivo de configuración (driver, servidor, usuario, clave, base) queda fuer
 (`Modulos/modAccesoDatos.py`), cuyo contrato está en [cliente-sql.md](../../ld-data/references/cliente-sql.md). Añade a
 cada punto de acceso la autenticación y la auditoría de la aplicación ([ld-security-session](../../ld-security-session/SKILL.md)).
 
+El mismo contrato sirve para **PostgreSQL** con el gemelo [postgres/modAccesoDatos.py](../../ld-data/examples/postgres/modAccesoDatos.py)
+(`psycopg 3`): la vista no cambia. El mapeo está en [postgres.md](../../ld-data/references/postgres.md). `iniciar_proyecto.py`
+copia el módulo correcto según la base elegida (`--bd postgres` o `--bd sqlserver`).
+
 ```python
 from django.urls import path
 from . import django_views
